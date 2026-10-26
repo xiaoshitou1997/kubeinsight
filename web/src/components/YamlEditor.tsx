@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { parseAllDocuments } from 'yaml';
 import { useApp } from '../AppContext';
 import { post } from '../api';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 import { Modal } from './Modal';
 import { Spinner } from './ui';
@@ -124,14 +125,14 @@ export function YamlView({ value, filename }: { value: string; filename: string 
         </span>
         <div className="yaml-toolbar-actions">
           <button type="button" className="btn btn-ghost btn-sm" onClick={copy}>
-            {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? '已复制' : '复制'}
+            {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? tr('已复制') : tr('复制')}
           </button>
           <button
             type="button"
             className="btn btn-ghost btn-sm"
             onClick={() => downloadText(filename, value)}
           >
-            <Download size={13} /> 下载
+            <Download size={13} /> {tr('下载')}
           </button>
         </div>
       </div>
@@ -192,7 +193,7 @@ export function ApplyYamlModal({
       for (const doc of docs) {
         if (doc.errors.length > 0) return doc.errors[0].message;
       }
-      if (!value.trim()) return 'YAML 内容为空';
+      if (!value.trim()) return tr('YAML 内容为空');
       return null;
     } catch (err) {
       return (err as Error).message;
@@ -217,10 +218,10 @@ export function ApplyYamlModal({
       setResults(response.results);
       onApplied?.(response.results);
       if (response.ok) {
-        notify(mode === 'create' ? '资源已创建' : '变更已应用', 'ok');
+        notify(mode === 'create' ? tr('资源已创建') : tr('变更已应用'), 'ok');
         onClose();
       } else {
-        notify('部分资源应用失败', 'err', '请查看下方结果');
+        notify(tr('部分资源应用失败'), 'err', tr('请查看下方结果'));
       }
     } catch (err) {
       setError((err as Error).message);
@@ -233,7 +234,7 @@ export function ApplyYamlModal({
     try {
       const docs = parseAllDocuments(value);
       if (docs.some((doc) => doc.errors.length > 0)) {
-        setError(docs.find((doc) => doc.errors.length > 0)?.errors[0]?.message ?? 'YAML 解析失败');
+        setError(docs.find((doc) => doc.errors.length > 0)?.errors[0]?.message ?? tr('YAML 解析失败'));
         return;
       }
       setValue(docs.map((doc) => doc.toString().trimEnd()).join('\n---\n') + '\n');
@@ -260,9 +261,9 @@ export function ApplyYamlModal({
                 const template = templates.find((item) => item.label === event.target.value);
                 if (template) setValue(template.yaml);
               }}
-              aria-label="从模板开始"
+              aria-label={tr('从模板开始')}
             >
-              <option value="">从模板开始…</option>
+              <option value="">{tr('从模板开始…')}</option>
               {templates.map((template) => (
                 <option key={template.label} value={template.label}>
                   {template.label}
@@ -272,18 +273,18 @@ export function ApplyYamlModal({
           )}
           <label className="checkbox">
             <input type="checkbox" checked={force} onChange={(event) => setForce(event.target.checked)} />
-            强制应用冲突字段
+            {tr('强制应用冲突字段')}
           </label>
           <div className="modal-footer-spacer" />
           <button type="button" className="btn btn-ghost" onClick={format} disabled={busy}>
-            <WandSparkles size={14} /> 格式化
+            <WandSparkles size={14} /> {tr('格式化')}
           </button>
           <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
-            取消
+            {tr('取消')}
           </button>
           <button type="button" className="btn btn-primary" onClick={() => void apply()} disabled={busy}>
             {busy ? <Spinner /> : <RotateCcw size={14} />}
-            {busy ? '应用中…' : '应用'}
+            {busy ? tr('应用中…') : tr('应用')}
           </button>
         </>
       }

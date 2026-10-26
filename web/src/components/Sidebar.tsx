@@ -11,6 +11,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../AppContext';
 import { RESOURCES, NAV_GROUPS } from '../catalog';
 import { classNames } from '../lib/format';
+import { tr } from '../i18n';
 import { Logo } from './Logo';
 import { Menu } from './Menu';
 
@@ -28,7 +29,7 @@ export function Sidebar() {
 
   return (
     <aside className={classNames('sidebar', navOpen && 'is-open')}>
-      <Link to="/" className="brand" aria-label="KubeInsight 首页">
+      <Link to="/" className="brand" aria-label={tr('KubeInsight 首页', 'KubeInsight home')}>
         <Logo size={30} />
         <div className="brand-text">
           <span className="brand-name">KubeInsight</span>
@@ -39,12 +40,12 @@ export function Sidebar() {
       <Menu
         width={320}
         align="left"
-        ariaLabel="切换集群"
+        ariaLabel={tr('切换集群')}
         button={
           <button type="button" className="cluster-switch" title={clusterInfo?.server ?? ''}>
             <span className="cluster-dot" />
             <span className="cluster-text">
-              <span className="cluster-name">{clusterInfo?.name ?? '选择集群'}</span>
+              <span className="cluster-name">{clusterInfo?.name ?? tr('选择集群')}</span>
               <span className="cluster-host">{host}</span>
             </span>
             <ChevronDown size={14} className="cluster-chevron" />
@@ -65,22 +66,22 @@ export function Sidebar() {
           })),
           { label: 'separator', separator: true },
           {
-            label: '集群与访问设置',
+            label: tr('集群与访问设置'),
             icon: <Settings size={14} />,
             onSelect: () => navigate('/settings'),
           },
         ]}
       />
 
-      <nav className="sidebar-nav" aria-label="主导航">
+      <nav className="sidebar-nav" aria-label={tr('主导航')}>
         <NavLink to="/" end className={({ isActive }) => classNames('nav-item', isActive && 'is-active')}>
           <Activity size={16} />
-          <span>概览</span>
+          <span>{tr('概览')}</span>
         </NavLink>
 
         {NAV_GROUPS.map((group) => (
           <div className="nav-group" key={group.label}>
-            <div className="nav-group-label">{group.label}</div>
+            <div className="nav-group-label">{tr(group.label)}</div>
             {group.keys.map((key) => {
               const resource = RESOURCES[key];
               if (!resource) return null;
@@ -124,12 +125,12 @@ export function Sidebar() {
           className={({ isActive }) => classNames('nav-item', isActive && 'is-active')}
         >
           <Settings size={16} />
-          <span>设置</span>
+          <span>{tr('设置')}</span>
         </NavLink>
         <div className="sidebar-meta">
           <span className="version-tag">v{meta.app.version}</span>
           <span className={classNames('connection-dot', meta.reachable ? 'is-online' : 'is-offline')} />
-          <span className="muted">{meta.reachable ? '已连接' : '离线'}</span>
+          <span className="muted">{meta.reachable ? tr('已连接') : tr('离线')}</span>
         </div>
       </div>
     </aside>

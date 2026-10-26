@@ -8,6 +8,7 @@ import { CommandPalette } from './CommandPalette';
 import { ResourceDrawer } from './ResourceDrawer';
 import { ToastViewport } from './Toast';
 import { classNames } from '../lib/format';
+import { tr } from '../i18n';
 
 export function Shell() {
   const {
@@ -52,8 +53,8 @@ export function Shell() {
             <div className="banner banner-danger">
               <CircleAlert size={15} />
               <div className="banner-content">
-                <strong>集群 API 当前不可达</strong>
-                <span>{meta.error ?? '请检查 kubeconfig、网络连通性与 API Server 证书。'}</span>
+                <strong>{tr('集群 API 当前不可达')}</strong>
+                <span>{meta.error ?? tr('请检查 kubeconfig、网络连通性与 API Server 证书。')}</span>
               </div>
               <button
                 type="button"
@@ -63,7 +64,7 @@ export function Shell() {
                   refreshNow();
                 }}
               >
-                <RefreshCw size={13} /> 重试
+                <RefreshCw size={13} /> {tr('重试')}
               </button>
             </div>
           )}
@@ -71,9 +72,15 @@ export function Shell() {
             <div className="banner banner-warn">
               <CircleAlert size={15} />
               <div className="banner-content">
-                <strong>配置提示</strong>
+                <strong>{tr('配置提示')}</strong>
                 <span>{warnings[0]}</span>
-                {warnings.length > 1 && <span className="muted">另有 {warnings.length - 1} 条提示</span>}
+                {warnings.length > 1 && (
+                  <span className="muted">
+                    {tr('另有 {{count}} 条提示', '{{count}} more notices', {
+                      count: warnings.length - 1,
+                    })}
+                  </span>
+                )}
               </div>
             </div>
           )}

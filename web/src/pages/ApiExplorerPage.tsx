@@ -4,6 +4,7 @@ import { useApp } from '../AppContext';
 import { DataTable, type TableColumn } from '../components/DataTable';
 import { Badge, EmptyState, ErrorState, PageHeader, SearchBox } from '../components/ui';
 import { useApiQuery, useDocumentTitle } from '../hooks';
+import { tr } from '../i18n';
 import { ageFromTimestamp, formatAgeFromTimestamp } from '../lib/format';
 import type { ApiResourceInfo, KubeObject, ListResponse } from '../types';
 
@@ -114,10 +115,12 @@ export function ApiExplorerPage() {
         icon={Braces}
         eyebrow="DISCOVERY"
         title="API Explorer"
-        description="直接浏览集群发现的所有 API 资源，包括 CRD 与聚合 API；适用于排查自定义资源。"
+        description={tr('直接浏览集群发现的所有 API 资源，包括 CRD 与聚合 API；适用于排查自定义资源。')}
         actions={
           <>
-            <span className="refresh-meta">{discovery.data?.resources.length ?? 0} 个资源类型</span>
+            <span className="refresh-meta">
+              {discovery.data?.resources.length ?? 0} {tr('个资源类型')}
+            </span>
             <button
               type="button"
               className="btn btn-ghost btn-sm"
@@ -126,7 +129,7 @@ export function ApiExplorerPage() {
                 discovery.refetch();
               }}
             >
-              <RefreshCw size={14} className={discovery.loading ? 'spin' : ''} /> 重新发现
+              <RefreshCw size={14} className={discovery.loading ? 'spin' : ''} /> {tr('重新发现')}
             </button>
           </>
         }
@@ -142,10 +145,12 @@ export function ApiExplorerPage() {
         <div className="explorer-layout">
           <aside className="panel explorer-sidebar">
             <div className="explorer-search">
-              <SearchBox value={search} onChange={setSearch} placeholder="搜索 Kind、资源名或 API 组…" />
+              <SearchBox value={search} onChange={setSearch} placeholder={tr('搜索 Kind、资源名或 API 组…')} />
             </div>
             <div className="explorer-scroll">
-              {groups.length === 0 && <div className="explorer-empty">没有匹配的 API 资源</div>}
+              {groups.length === 0 && (
+                <div className="explorer-empty">{tr('没有匹配的 API 资源')}</div>
+              )}
               {groups.map((group) => (
                 <div className="explorer-group" key={group.label}>
                   <div className="explorer-group-label">{group.label}</div>
@@ -181,8 +186,8 @@ export function ApiExplorerPage() {
             {!selected ? (
               <EmptyState
                 icon={Braces}
-                title="选择一个 API 资源"
-                description="左侧列出了集群发现的全部资源类型。选择后可浏览实例并打开详情。"
+                title={tr('选择一个 API 资源')}
+                description={tr('左侧列出了集群发现的全部资源类型。选择后可浏览实例并打开详情。')}
               />
             ) : (
               <>
@@ -201,7 +206,9 @@ export function ApiExplorerPage() {
                       {selected.shortNames.length > 0 && (
                         <>
                           <span className="dot-sep" />
-                          <span className="muted mono">短名 {selected.shortNames.join(', ')}</span>
+                          <span className="muted mono">
+                            {tr('短名')} {selected.shortNames.join(', ')}
+                          </span>
                         </>
                       )}
                     </div>
@@ -226,8 +233,12 @@ export function ApiExplorerPage() {
                   empty={
                     <EmptyState
                       icon={SearchX}
-                      title="没有找到实例"
-                      description={selected.namespaced && !namespace ? '当前视图为全部命名空间。' : '该资源类型下暂无对象。'}
+                      title={tr('没有找到实例')}
+                      description={
+                        selected.namespaced && !namespace
+                          ? tr('当前视图为全部命名空间。')
+                          : tr('该资源类型下暂无对象。')
+                      }
                       compact
                     />
                   }

@@ -6,6 +6,7 @@ import type { EventsResponse, KubeEvent, KubeObject, ListResponse, ResourceRef }
 import { useApiQuery } from '../hooks';
 import { DataTable, type TableColumn } from './DataTable';
 import { Badge, EmptyState, Ratio } from './ui';
+import { tr } from '../i18n';
 
 const podColumns: Array<TableColumn<KubeObject>> = [
   {
@@ -100,7 +101,7 @@ export function RelatedPods({
     <div className="related-pods">
       <div className="related-head">
         <div>
-          <h3>关联的 Pods</h3>
+          <h3>{tr('关联的 Pods')}</h3>
           <p className="mono muted">
             {nodeName ? `node=${nodeName}` : selector ? `selector: ${selector}` : ''}
           </p>

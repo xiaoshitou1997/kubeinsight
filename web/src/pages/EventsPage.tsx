@@ -5,13 +5,14 @@ import { resourceForKind } from '../catalog';
 import { DataTable, type TableColumn } from '../components/DataTable';
 import { Badge, EmptyState, ErrorState, PageHeader, SearchBox, Segmented } from '../components/ui';
 import { useApiQuery, useDebounced, useDocumentTitle } from '../hooks';
+import { tr } from '../i18n';
 import { formatAgeFromTimestamp, formatDateTime } from '../lib/format';
 import type { EventsResponse, KubeEvent } from '../types';
 
 type EventFilter = 'all' | 'Warning' | 'Normal';
 
 export function EventsPage() {
-  useDocumentTitle('事件');
+  useDocumentTitle(tr('事件'));
   const { cluster, namespace, openResource, refreshNow } = useApp();
   const [filter, setFilter] = useState<EventFilter>('all');
   const [search, setSearch] = useState('');
@@ -68,7 +69,7 @@ export function EventsPage() {
       header: 'REASON',
       width: '140px',
       render: (event) => (
-        <span className="mono" title={event.component ? `来源：${event.component}` : undefined}>
+        <span className="mono" title={event.component ? tr(`来源：${event.component}`, `Source: ${event.component}`) : undefined}>
           {event.reason}
         </span>
       ),
@@ -128,15 +129,15 @@ export function EventsPage() {
       <PageHeader
         icon={ScrollText}
         eyebrow="EVENTS"
-        title="事件中心"
-        description="Kubernetes 事件默认保留 1 小时；告警事件通常指向调度失败、镜像拉取或探针异常。"
+        title={tr('事件中心')}
+        description={tr('Kubernetes 事件默认保留 1 小时；告警事件通常指向调度失败、镜像拉取或探针异常。')}
         actions={
           <>
             <span className="refresh-meta">
-              {items.length} 条 · {objects} 个对象
+              {items.length} {tr('条')} · {objects} {tr('个对象')}
             </span>
             <button type="button" className="btn btn-ghost btn-sm" onClick={refreshNow}>
-              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> 刷新
+              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> {tr('刷新')}
             </button>
           </>
         }
@@ -152,12 +153,12 @@ export function EventsPage() {
           <strong>{items.length - warnings}</strong>
         </div>
         <div className="event-summary-item">
-          <span>涉及对象</span>
+          <span>{tr('涉及对象')}</span>
           <strong>{objects}</strong>
         </div>
         <div className="event-summary-item">
-          <span>命名空间</span>
-          <strong className="mono">{namespace || '全部'}</strong>
+          <span>{tr('命名空间')}</span>
+          <strong className="mono">{namespace || tr('全部')}</strong>
         </div>
       </div>
 
@@ -166,14 +167,14 @@ export function EventsPage() {
           value={filter}
           onChange={setFilter}
           options={[
-            { value: 'all', label: '全部' },
+            { value: 'all', label: tr('全部') },
             { value: 'Warning', label: 'Warning' },
             { value: 'Normal', label: 'Normal' },
           ]}
-          ariaLabel="事件类型"
+          ariaLabel={tr('事件类型')}
         />
-        <SearchBox value={search} onChange={setSearch} placeholder="搜索原因、消息或对象…" />
-        <span className="muted list-toolbar-hint">点击事件行可打开关联资源</span>
+        <SearchBox value={search} onChange={setSearch} placeholder={tr('搜索原因、消息或对象…')} />
+        <span className="muted list-toolbar-hint">{tr('点击事件行可打开关联资源')}</span>
       </div>
 
       {query.error ? (
@@ -189,9 +190,11 @@ export function EventsPage() {
           empty={
             <EmptyState
               icon={search ? SearchX : ScrollText}
-              title={search ? '没有匹配的事件' : '当前没有事件'}
+              title={search ? tr('没有匹配的事件') : tr('当前没有事件')}
               description={
-                search ? '尝试调整关键字或切换事件类型。' : '集群近期没有产生 Warning 或 Normal 事件。'
+                search
+                  ? tr('尝试调整关键字或切换事件类型。')
+                  : tr('集群近期没有产生 Warning 或 Normal 事件。')
               }
               compact
             />

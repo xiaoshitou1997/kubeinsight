@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '../AppContext';
 import { apiUrl } from '../api';
+import { tr } from '../i18n';
 import { classNames, formatNumber } from '../lib/format';
 import { Badge, IconButton } from './ui';
 
@@ -81,7 +82,7 @@ export function LogViewer({
       );
 
       if (!response.ok) {
-        let message = `日志请求失败 (HTTP ${response.status})`;
+        let message = tr(`日志请求失败 (HTTP ${response.status})`, `Log request failed (HTTP ${response.status})`);
         try {
           const body = (await response.json()) as { error?: { message?: string } };
           if (body.error?.message) message = body.error.message;
@@ -90,7 +91,7 @@ export function LogViewer({
         }
         throw new Error(message);
       }
-      if (!response.body) throw new Error('当前浏览器不支持流式日志');
+      if (!response.body) throw new Error(tr('当前浏览器不支持流式日志'));
 
       setStatus('streaming');
       const reader = response.body.getReader();
@@ -173,7 +174,7 @@ export function LogViewer({
         }),
         { credentials: 'same-origin' },
       );
-      if (!response.ok) throw new Error(`下载失败 (HTTP ${response.status})`);
+      if (!response.ok) throw new Error(tr(`下载失败 (HTTP ${response.status})`, `Download failed (HTTP ${response.status})`));
       const text = await response.text();
       const blob = new Blob([text], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -200,7 +201,7 @@ export function LogViewer({
             className="select select-sm"
             value={container}
             onChange={(event) => setContainer(event.target.value)}
-            aria-label="选择容器"
+            aria-label={tr('选择容器')}
           >
             {containers.map((item) => (
               <option key={item} value={item}>
@@ -217,8 +218,8 @@ export function LogViewer({
           <input
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            placeholder="过滤日志"
-            aria-label="过滤日志"
+            placeholder={tr('过滤日志')}
+            aria-label={tr('过滤日志')}
           />
         </div>
 
@@ -229,48 +230,48 @@ export function LogViewer({
               checked={timestamps}
               onChange={(event) => setTimestamps(event.target.checked)}
             />
-            时间戳
+            {tr('时间戳')}
           </label>
           {previousAvailable && (
-            <label className="checkbox checkbox-sm" title="查看上一个已终止容器的日志">
+            <label className="checkbox checkbox-sm" title={tr('查看上一个已终止容器的日志')}>
               <input
                 type="checkbox"
                 checked={previous}
                 onChange={(event) => setPrevious(event.target.checked)}
               />
-              上一次
+              {tr('上一次')}
             </label>
           )}
           <select
             className="select select-sm"
             value={tailLines}
             onChange={(event) => setTailLines(Number(event.target.value))}
-            aria-label="日志行数"
+            aria-label={tr('日志行数')}
           >
-            <option value={200}>200 行</option>
-            <option value={500}>500 行</option>
-            <option value={2000}>2000 行</option>
-            <option value={5000}>5000 行</option>
+            <option value={200}>{tr('200 行', '200 lines')}</option>
+            <option value={500}>{tr('500 行', '500 lines')}</option>
+            <option value={2000}>{tr('2000 行', '2000 lines')}</option>
+            <option value={5000}>{tr('5000 行', '5000 lines')}</option>
           </select>
           <button
             type="button"
             className={classNames('btn btn-sm', follow ? 'btn-primary-soft' : 'btn-ghost')}
             onClick={() => setFollow((value) => !value)}
-            title={follow ? '暂停实时日志' : '继续实时日志'}
+            title={follow ? tr('暂停实时日志') : tr('继续实时日志')}
           >
             {follow ? <Pause size={13} /> : <Play size={13} />}
-            {follow ? '实时' : '已暂停'}
+            {follow ? tr('实时') : tr('已暂停')}
           </button>
-          <IconButton icon={RotateCw} label="重新加载" onClick={() => setNonce((value) => value + 1)} />
+          <IconButton icon={RotateCw} label={tr('重新加载')} onClick={() => setNonce((value) => value + 1)} />
           <IconButton
             icon={wrap ? ArrowDownToLine : WrapText}
-            label={wrap ? '取消自动换行' : '自动换行'}
+            label={wrap ? tr('取消自动换行') : tr('自动换行')}
             active={wrap}
             onClick={() => setWrap((value) => !value)}
           />
           <IconButton
             icon={downloading ? LoaderCircle : Download}
-            label="下载日志"
+            label={tr('下载日志')}
             onClick={() => void download()}
             disabled={downloading}
           />
@@ -282,10 +283,17 @@ export function LogViewer({
           tone={status === 'error' ? 'err' : status === 'streaming' ? 'ok' : status === 'ended' ? 'muted' : 'warn'}
           pulse={status === 'streaming'}
         >
-          {status === 'streaming' ? '实时流' : status === 'connecting' ? '连接中' : status === 'ended' ? '已结束' : '错误'}
+          {status === 'streaming'
+            ? tr('实时流')
+            : status === 'connecting'
+              ? tr('连接中')
+              : status === 'ended'
+                ? tr('已结束')
+                : tr('错误')}
         </Badge>
         <span className="muted">
-          {formatNumber(filtered.length)} 行{filter ? ` / 共 ${formatNumber(lines.length)} 行` : ''}
+          {formatNumber(filtered.length)} {tr('行', 'lines')}
+          {filter ? ` / ${tr('共')} ${formatNumber(lines.length)} ${tr('行', 'lines')}` : ''}
         </span>
         {!autoScroll && (
           <button
@@ -297,7 +305,7 @@ export function LogViewer({
               if (element) element.scrollTop = element.scrollHeight;
             }}
           >
-            <ArrowDownToLine size={12} /> 回到底部
+            <ArrowDownToLine size={12} /> {tr('回到底部')}
           </button>
         )}
       </div>
@@ -311,7 +319,7 @@ export function LogViewer({
       >
         {filtered.length === 0 && !error && (
           <div className="log-empty">
-            {status === 'connecting' ? '正在读取日志…' : '暂无日志输出'}
+            {status === 'connecting' ? tr('正在读取日志…') : tr('暂无日志输出')}
           </div>
         )}
         {filtered.map((line, index) => {

@@ -4,6 +4,7 @@ import type { Terminal as XTermInstance } from '@xterm/xterm';
 import { CircleAlert, RotateCw, Trash2, Unplug } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../AppContext';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 import { Badge, IconButton } from './ui';
 
@@ -100,7 +101,7 @@ export function TerminalView({
       };
       window.setTimeout(safeFit, 30);
 
-      term.writeln('\x1b[38;2;94;234;212m●\x1b[0m 正在连接容器终端…');
+      term.writeln(`\x1b[38;2;94;234;212m●\x1b[0m ${tr('正在连接容器终端…')}`);
       term.writeln('\x1b[38;2;100;116;139m  ' + namespace + '/' + pod + ' · ' + container + '\x1b[0m');
       term.writeln('');
 
@@ -138,16 +139,16 @@ export function TerminalView({
         if (message.t === 'stdout' || message.t === 'stderr') {
           term?.write(message.d ?? '');
         } else if (message.t === 'error') {
-          setError(message.message ?? '终端错误');
+          setError(message.message ?? tr('终端错误'));
           setStatus('error');
-          term?.writeln(`\r\n\x1b[38;2;251;113;133m${message.message ?? '终端错误'}\x1b[0m`);
+          term?.writeln(`\r\n\x1b[38;2;251;113;133m${message.message ?? tr('终端错误')}\x1b[0m`);
         }
       };
 
       socket.onerror = () => {
         if (disposed) return;
         setStatus('error');
-        setError('WebSocket 连接失败');
+        setError(tr('WebSocket 连接失败'));
       };
 
       socket.onclose = (event) => {
@@ -155,7 +156,7 @@ export function TerminalView({
         setStatus((current) => (current === 'error' ? 'error' : 'closed'));
         if (event.code !== 1000) {
           term?.writeln(
-            `\r\n\x1b[38;2;100;116;139m[连接已关闭 code=${event.code}]\x1b[0m`,
+            `\r\n\x1b[38;2;100;116;139m[${tr('连接已关闭')} code=${event.code}]\x1b[0m`,
           );
         }
       };
@@ -198,7 +199,7 @@ export function TerminalView({
       <div className="terminal-disabled">
         <CircleAlert size={18} />
         <div>
-          <strong>终端不可用</strong>
+          <strong>{tr('终端不可用')}</strong>
           <p>{disabledReason}</p>
         </div>
       </div>
@@ -213,7 +214,7 @@ export function TerminalView({
             className="select select-sm"
             value={container}
             onChange={(event) => setContainer(event.target.value)}
-            aria-label="选择容器"
+            aria-label={tr('选择容器')}
           >
             {containers.map((item) => (
               <option key={item} value={item}>
@@ -228,7 +229,7 @@ export function TerminalView({
           className="select select-sm"
           value={shell}
           onChange={(event) => setShell(event.target.value)}
-          aria-label="选择 Shell"
+          aria-label={tr('选择 Shell')}
         >
           <option value="/bin/sh">/bin/sh</option>
           <option value="/bin/bash">/bin/bash</option>
@@ -242,29 +243,29 @@ export function TerminalView({
           pulse={status === 'connecting'}
         >
           {status === 'connected'
-            ? '已连接'
+            ? tr('已连接')
             : status === 'connecting'
-              ? '连接中'
+              ? tr('连接中')
               : status === 'error'
-                ? '连接错误'
-                : '已断开'}
+                ? tr('连接错误')
+                : tr('已断开')}
         </Badge>
         <div className="terminal-spacer" />
         {error && <span className="terminal-error">{error}</span>}
-        <IconButton icon={RotateCw} label="重新连接" onClick={() => setNonce((value) => value + 1)} />
+        <IconButton icon={RotateCw} label={tr('重新连接')} onClick={() => setNonce((value) => value + 1)} />
         <IconButton
           icon={Trash2}
-          label="清屏"
+          label={tr('清屏')}
           onClick={() => {
             termRef.current?.clear();
             termRef.current?.focus();
           }}
         />
-        <IconButton icon={Unplug} label="断开连接" onClick={disconnect} />
+        <IconButton icon={Unplug} label={tr('断开连接')} onClick={disconnect} />
       </div>
       <div className={classNames('terminal-host', status === 'error' && 'has-error')} ref={hostRef} />
       <div className="terminal-hint">
-        终端通过 Kubernetes exec API 建立，命令以当前 kubeconfig 身份执行。调整窗口大小会自动同步终端尺寸。
+        {tr('终端通过 Kubernetes exec API 建立，命令以当前 kubeconfig 身份执行。调整窗口大小会自动同步终端尺寸。')}
       </div>
     </div>
   );

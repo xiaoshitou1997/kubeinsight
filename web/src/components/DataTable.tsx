@@ -1,5 +1,6 @@
 import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 import { Spinner } from './ui';
 
@@ -88,7 +89,7 @@ export function DataTable<T>({
                 }
               >
                 <span className="th-inner">
-                  {column.header}
+                  {tr(column.header)}
                   {column.sortValue &&
                     (sort?.key === column.key ? (
                       sort.direction === 'asc' ? (
@@ -152,13 +153,13 @@ export function DataTable<T>({
         </div>
       )}
 
-      {!loading && rows.length === 0 && <div className="table-empty">{empty ?? '暂无资源'}</div>}
+      {!loading && rows.length === 0 && <div className="table-empty">{empty ?? tr('暂无资源')}</div>}
 
       {hasMore && (
         <div className="table-footer">
           <button type="button" className="btn btn-ghost" onClick={onLoadMore} disabled={loadingMore}>
             {loadingMore ? <Spinner /> : null}
-            加载更多
+            {tr('加载更多')}
           </button>
         </div>
       )}

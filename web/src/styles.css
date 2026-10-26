@@ -709,6 +709,39 @@ span.mono.muted {
   padding: 0;
 }
 
+.lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  flex: none;
+}
+
+.lang-toggle:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
+
+.lang-toggle-compact {
+  padding: 0 7px;
+}
+
+.login-lang,
+.setup-lang {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 5;
+}
+
 .avatar {
   font-size: 12px;
   font-weight: 650;
@@ -5164,6 +5197,13 @@ span.mono.muted {
   }
   .topbar-right > .icon-btn:nth-last-child(2) {
     display: none;
+  }
+  .lang-toggle span {
+    display: none;
+  }
+  .lang-toggle {
+    width: 28px;
+    padding: 0;
   }
   .crumb-cluster,
   .crumb-sep {

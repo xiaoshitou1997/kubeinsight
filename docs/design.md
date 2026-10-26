@@ -175,7 +175,14 @@ sequenceDiagram
 - 相比 Kite：更强调「排障闭环」（日志流、exec、事件、YAML 编辑）与单团队自托管；多集群仅通过 kubeconfig context，不做工作区编排。
 - 相比 k8m：不做 AI/Agent 集成，也不引入模型依赖；保持可审计的确定性行为。
 
-## 8. 后续路线
+## 8. 多语言与主题
+
+- **轻量 i18n**：以中文为源文案，英文词典集中维护；复杂/动态文案在调用点提供内联英文。没有引入 i18next、ICU 或构建期代码生成，保持前端依赖数量不变。
+- **默认跟随浏览器**：首次访问按 `navigator.language` 选择中/英；顶栏切换与设置页选择写入本机存储，下次访问继续生效。
+- **技术名词不翻译**：资源 Kind、API Group、字段名、状态值与 kubectl 术语保留英文，避免英文界面与命令/API 语义脱节。
+- **主题三态**：`system | light | dark`，默认 `system`；通过 `prefers-color-scheme` 实时响应系统切换，用户可固定浅色或深色。`web/public/theme.js` 在 React 挂载前设置 `data-theme`，避免首屏闪烁。
+
+## 9. 后续路线
 
 优先级从高到低：
 
@@ -186,7 +193,7 @@ sequenceDiagram
 5. **审计与操作记录**：记录谁在 UI 上发起了什么写操作（需要用户体系）。
 6. **e2e 测试**：用 kind 起临时集群，覆盖 apply / logs / exec。
 
-## 9. 参考
+## 10. 参考
 
 - Kubernetes Dashboard 归档仓库：<https://github.com/kubernetes-retired/dashboard>
 - Headlamp：<https://github.com/headlamp-k8s/headlamp>

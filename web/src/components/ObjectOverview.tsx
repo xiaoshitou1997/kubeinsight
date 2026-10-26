@@ -24,6 +24,7 @@ import {
 import type { KubeObject, MetricsResponse, ResourceRef } from '../types';
 import { Badge, Field, KeyValueChips, Ratio } from './ui';
 import { Meter, Ring, toneForPercent } from './Gauge';
+import { tr } from '../i18n';
 
 export function ObjectOverview({
   object,
@@ -120,8 +121,8 @@ function Section({
     <section className="detail-section">
       <div className="detail-section-head">
         <div>
-          <h3>{title}</h3>
-          {subtitle && <p>{subtitle}</p>}
+          <h3>{tr(title)}</h3>
+          {subtitle && <p>{tr(subtitle)}</p>}
         </div>
         {actions}
       </div>
@@ -142,7 +143,7 @@ function MetadataSection({
   return (
     <Section title="元数据">
       <div className="detail-grid">
-        <Field label="命名空间">{meta.namespace ?? '集群级'}</Field>
+        <Field label="命名空间">{meta.namespace ?? tr('集群级')}</Field>
         <Field label="创建时间">{formatDateTime(meta.creationTimestamp)}</Field>
         <Field label="存活时间">{formatAgeFromTimestamp(meta.creationTimestamp)}</Field>
         <Field label="UID" mono>
@@ -178,7 +179,7 @@ function MetadataSection({
       </div>
       {Array.isArray(meta.finalizers) && meta.finalizers.length > 0 && (
         <div className="detail-subtle">
-          终结器：
+          {tr('终结器：')}
           {meta.finalizers.map((value: string) => (
             <code key={value}>{value}</code>
           ))}
@@ -213,13 +214,13 @@ function PodSection({
     >
       <div className="stat-strip">
         <div className="stat-strip-item">
-          <span>就绪容器</span>
+          <span>{tr('就绪容器')}</span>
           <strong>
             <Ratio ready={ready.ready} total={ready.total} />
           </strong>
         </div>
         <div className="stat-strip-item">
-          <span>重启次数</span>
+          <span>{tr('重启次数')}</span>
           <strong className={status.restarts > 0 ? 'text-warn' : ''}>{status.restarts}</strong>
         </div>
         <div className="stat-strip-item">
@@ -231,7 +232,7 @@ function PodSection({
           <strong className="mono">{object.status?.qosClass ?? '—'}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>CPU / 内存</span>
+          <span>{tr('CPU / 内存')}</span>
           <strong className="mono">
             {metricsAvailable && podMetric
               ? `${formatCpu(podMetric.cpuMillis)} · ${formatBytes(podMetric.memoryBytes)}`
@@ -239,7 +240,7 @@ function PodSection({
           </strong>
         </div>
         <div className="stat-strip-item">
-          <span>节点</span>
+          <span>{tr('节点')}</span>
           <strong>
             {node ? (
               <button
@@ -308,11 +309,13 @@ function NodeSection({
           <Field label="Kubelet" mono>{object.status?.nodeInfo?.kubeletVersion ?? '—'}</Field>
           <Field label="操作系统">{object.status?.nodeInfo?.osImage ?? '—'}</Field>
           <Field label="容器运行时" mono>{object.status?.nodeInfo?.containerRuntimeVersion ?? '—'}</Field>
-          <Field label="可调度">{object.spec?.unschedulable ? '已封锁' : '是'}</Field>
+          <Field label="可调度">{object.spec?.unschedulable ? tr('已封锁') : tr('是')}</Field>
         </div>
       </div>
       {!metricsAvailable && (
-        <div className="inline-note">metrics-server 不可用，实时使用率无法展示（容量与分配仍可查看）。</div>
+        <div className="inline-note">
+          {tr('metrics-server 不可用，实时使用率无法展示（容量与分配仍可查看）。')}
+        </div>
       )}
       {metricsAvailable && nodeMetric && (
         <div className="node-meters">
@@ -342,9 +345,9 @@ function NodeCapacitySection({ object }: { object: KubeObject }) {
       <table className="simple-table">
         <thead>
           <tr>
-            <th>资源</th>
-            <th>容量</th>
-            <th>可分配</th>
+            <th>{tr('资源')}</th>
+            <th>{tr('容量')}</th>
+            <th>{tr('可分配')}</th>
           </tr>
         </thead>
         <tbody>
@@ -366,28 +369,28 @@ function WorkloadSection({ object }: { object: KubeObject }) {
   const ready = object.status?.readyReplicas ?? object.status?.numberReady ?? 0;
   return (
     <Section
-      title="工作负载"
+      title={tr('工作负载', 'Workload')}
       actions={<Badge tone={ready >= desired ? 'ok' : 'warn'}>{ready >= desired ? 'Ready' : 'Degraded'}</Badge>}
     >
       <div className="stat-strip">
         <div className="stat-strip-item">
-          <span>期望副本</span>
+          <span>{tr('期望副本')}</span>
           <strong>{desired}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>就绪</span>
+          <span>{tr('就绪')}</span>
           <strong>{ready}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>已更新</span>
+          <span>{tr('已更新')}</span>
           <strong>{object.status?.updatedReplicas ?? object.status?.updatedNumberScheduled ?? 0}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>可用</span>
+          <span>{tr('可用')}</span>
           <strong>{object.status?.availableReplicas ?? object.status?.numberAvailable ?? 0}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>策略</span>
+          <span>{tr('策略')}</span>
           <strong className="mono">
             {object.spec?.strategy?.type ?? object.spec?.updateStrategy?.type ?? '—'}
           </strong>
@@ -423,11 +426,11 @@ function ServiceSection({ object }: { object: KubeObject }) {
         <table className="simple-table">
           <thead>
             <tr>
-              <th>名称</th>
-              <th>端口</th>
-              <th>目标端口</th>
+              <th>{tr('名称')}</th>
+              <th>{tr('端口')}</th>
+              <th>{tr('目标端口')}</th>
               <th>NodePort</th>
-              <th>协议</th>
+              <th>{tr('协议')}</th>
             </tr>
           </thead>
           <tbody>
@@ -465,7 +468,7 @@ function IngressSection({ object }: { object: KubeObject }) {
             <th>Host</th>
             <th>Path</th>
             <th>Path Type</th>
-            <th>后端服务</th>
+            <th>{tr('后端服务')}</th>
           </tr>
         </thead>
         <tbody>
@@ -499,9 +502,9 @@ function IngressSection({ object }: { object: KubeObject }) {
 function ConfigMapSection({ object }: { object: KubeObject }) {
   const entries = Object.entries(object.data ?? {});
   return (
-    <Section title="配置项" subtitle={`${entries.length} 个键`}>
+    <Section title={tr('配置项')} subtitle={tr('{{count}} 个键', '{{count}} keys', { count: entries.length })}>
       {entries.length === 0 ? (
-        <div className="muted">没有数据</div>
+        <div className="muted">{tr('没有数据')}</div>
       ) : (
         <div className="kv-list">
           {entries.map(([key, value]) => (
@@ -529,16 +532,20 @@ function SecretSection({
   const entries = Object.entries(object.data ?? {});
   return (
     <Section
-      title="密钥数据"
-      subtitle={masked ? '内容已脱敏，显示明文需要权限并会记录在审计日志中' : '明文已显示，请谨慎操作'}
+      title={tr('密钥数据')}
+      subtitle={
+        masked
+          ? tr('内容已脱敏，显示明文需要权限并会记录在审计日志中')
+          : tr('明文已显示，请谨慎操作')
+      }
       actions={
         masked ? (
           <button type="button" className="btn btn-ghost btn-sm" onClick={onReveal}>
-            <LockOpen size={13} /> 显示明文
+            <LockOpen size={13} /> {tr('显示明文')}
           </button>
         ) : (
           <Badge tone="warn" dot={false}>
-            明文模式
+            {tr('明文模式')}
           </Badge>
         )
       }
@@ -547,7 +554,7 @@ function SecretSection({
         <div className="secret-masked">
           <KeyRound size={16} />
           <div>
-            <div>共 {keys.length} 个键</div>
+            <div>{tr('共 {{count}} 个键', '{{count}} keys', { count: keys.length })}</div>
             <div className="chips" style={{ marginTop: 6 }}>
               {keys.map((key) => (
                 <span className="chip" key={key}>
@@ -579,10 +586,10 @@ function StorageSection({ object }: { object: KubeObject }) {
           <Field label="Provisioner" mono>{object.provisioner ?? '—'}</Field>
           <Field label="回收策略">{object.reclaimPolicy ?? '—'}</Field>
           <Field label="绑定模式">{object.volumeBindingMode ?? '—'}</Field>
-          <Field label="允许扩容">{object.allowVolumeExpansion ? '是' : '否'}</Field>
+          <Field label="允许扩容">{object.allowVolumeExpansion ? tr('是') : tr('否')}</Field>
         </div>
         <div className="labels-block" style={{ marginTop: 12 }}>
-          <div className="labels-label">参数</div>
+          <div className="labels-label">{tr('参数')}</div>
           <KeyValueChips values={object.parameters} />
         </div>
       </Section>
@@ -604,7 +611,8 @@ function StorageSection({ object }: { object: KubeObject }) {
       </div>
       {object.spec?.claimRef && (
         <div className="detail-subtle">
-          被声明引用：{object.spec.claimRef.namespace}/{object.spec.claimRef.name}
+          {tr('被声明引用：')}
+          {object.spec.claimRef.namespace}/{object.spec.claimRef.name}
         </div>
       )}
     </Section>
@@ -616,21 +624,21 @@ function HpaSection({ object }: { object: KubeObject }) {
     <Section title="自动扩缩容">
       <div className="stat-strip">
         <div className="stat-strip-item">
-          <span>当前副本</span>
+          <span>{tr('当前副本')}</span>
           <strong>{object.status?.currentReplicas ?? 0}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>期望副本</span>
+          <span>{tr('期望副本')}</span>
           <strong>{object.status?.desiredReplicas ?? 0}</strong>
         </div>
         <div className="stat-strip-item">
-          <span>最小 / 最大</span>
+          <span>{tr('最小 / 最大')}</span>
           <strong>
             {object.spec?.minReplicas ?? 1} / {object.spec?.maxReplicas ?? '—'}
           </strong>
         </div>
         <div className="stat-strip-item">
-          <span>目标</span>
+          <span>{tr('目标')}</span>
           <strong className="mono">
             {object.spec?.scaleTargetRef?.kind}/{object.spec?.scaleTargetRef?.name}
           </strong>
@@ -639,9 +647,9 @@ function HpaSection({ object }: { object: KubeObject }) {
       <table className="simple-table">
         <thead>
           <tr>
-            <th>指标</th>
-            <th>目标</th>
-            <th>当前</th>
+            <th>{tr('指标')}</th>
+            <th>{tr('目标')}</th>
+            <th>{tr('当前')}</th>
           </tr>
         </thead>
         <tbody>
@@ -675,7 +683,7 @@ function CronJobSection({ object }: { object: KubeObject }) {
       <div className="detail-grid detail-grid-tight">
         <Field label="调度表达式" mono>{object.spec?.schedule ?? '—'}</Field>
         <Field label="时区">{object.spec?.timeZone ?? '集群默认'}</Field>
-        <Field label="挂起">{object.spec?.suspend ? '是' : '否'}</Field>
+        <Field label="挂起">{object.spec?.suspend ? tr('是') : tr('否')}</Field>
         <Field label="并发策略">{object.spec?.concurrencyPolicy ?? 'Allow'}</Field>
         <Field label="上次调度">{formatDateTime(object.status?.lastScheduleTime)}</Field>
         <Field label="活跃 Job">{object.status?.active?.length ?? 0}</Field>
@@ -717,7 +725,7 @@ function CrdSection({ object }: { object: KubeObject }) {
       <table className="simple-table">
         <thead>
           <tr>
-            <th>版本</th>
+            <th>{tr('版本')}</th>
             <th>Served</th>
             <th>Storage</th>
             <th>Schema</th>
@@ -727,8 +735,8 @@ function CrdSection({ object }: { object: KubeObject }) {
           {(object.spec?.versions ?? []).map((version: KubeObject) => (
             <tr key={version.name}>
               <td className="mono">{version.name}</td>
-              <td>{version.served ? '是' : '否'}</td>
-              <td>{version.storage ? '是' : '否'}</td>
+              <td>{version.served ? tr('是') : tr('否')}</td>
+              <td>{version.storage ? tr('是') : tr('否')}</td>
               <td>{version.schema?.openAPIV3Schema ? 'OpenAPI v3' : '—'}</td>
             </tr>
           ))}
@@ -763,7 +771,7 @@ function RoleSection({ object }: { object: KubeObject }) {
           {rules.length === 0 && (
             <tr>
               <td colSpan={4} className="muted">
-                没有规则
+                {tr('没有规则')}
               </td>
             </tr>
           )}
@@ -785,9 +793,9 @@ function BindingSection({ object }: { object: KubeObject }) {
       <table className="simple-table">
         <thead>
           <tr>
-            <th>类型</th>
-            <th>名称</th>
-            <th>命名空间</th>
+            <th>{tr('类型')}</th>
+            <th>{tr('名称')}</th>
+            <th>{tr('命名空间')}</th>
           </tr>
         </thead>
         <tbody>
@@ -827,18 +835,24 @@ function ContainerSection({ object }: { object: KubeObject }) {
 
   return (
     <Section
-      title="容器"
-      subtitle={initContainers.length > 0 ? `包含 ${initContainers.length} 个初始化容器` : undefined}
+      title={tr('容器')}
+      subtitle={
+        initContainers.length > 0
+          ? tr('包含 {{count}} 个初始化容器', '{{count}} init containers', {
+              count: initContainers.length,
+            })
+          : undefined
+      }
     >
       <table className="simple-table">
         <thead>
           <tr>
-            <th>名称</th>
-            <th>镜像</th>
-            <th>状态</th>
-            <th>就绪</th>
-            <th>重启</th>
-            <th>资源请求 / 限制</th>
+            <th>{tr('名称')}</th>
+            <th>{tr('镜像')}</th>
+            <th>{tr('状态')}</th>
+            <th>{tr('就绪')}</th>
+            <th>{tr('重启')}</th>
+            <th>{tr('资源请求 / 限制')}</th>
           </tr>
         </thead>
         <tbody>
@@ -857,7 +871,7 @@ function ContainerSection({ object }: { object: KubeObject }) {
                 <td>
                   {status ? <Badge tone={state.tone}>{state.label}</Badge> : <span className="muted">—</span>}
                 </td>
-                <td>{status ? (status.ready ? '是' : '否') : '—'}</td>
+                <td>{status ? (status.ready ? tr('是') : tr('否')) : '—'}</td>
                 <td className={status?.restartCount > 0 ? 'text-warn mono' : 'mono muted'}>
                   {status?.restartCount ?? 0}
                 </td>
@@ -879,11 +893,11 @@ function ConditionsSection({ object }: { object: KubeObject }) {
       <table className="simple-table">
         <thead>
           <tr>
-            <th>类型</th>
-            <th>状态</th>
-            <th>原因</th>
-            <th>消息</th>
-            <th>更新时间</th>
+            <th>{tr('类型')}</th>
+            <th>{tr('状态')}</th>
+            <th>{tr('原因')}</th>
+            <th>{tr('消息')}</th>
+            <th>{tr('更新时间')}</th>
           </tr>
         </thead>
         <tbody>
@@ -914,7 +928,10 @@ function VolumesSection({ object }: { object: KubeObject }) {
   const volumes: KubeObject[] = object.spec?.volumes ?? [];
   if (volumes.length === 0) return null;
   return (
-    <Section title="卷" subtitle={`${volumes.length} 个`}>
+    <Section
+      title={tr('卷')}
+      subtitle={tr('{{count}} 个', '{{count}} volumes', { count: volumes.length })}
+    >
       <div className="volume-list">
         {volumes.map((volume) => {
           const sourceKey = Object.keys(volume).find((key) => key !== 'name');
@@ -942,7 +959,7 @@ function TaintsSection({ object }: { object: KubeObject }) {
   const taints: KubeObject[] = object.spec?.taints ?? [];
   if (taints.length === 0) return null;
   return (
-    <Section title="污点">
+    <Section title={tr('污点')}>
       <table className="simple-table">
         <thead>
           <tr>
@@ -972,7 +989,7 @@ function LabelsSection({ object }: { object: KubeObject }) {
   const annotations = object.metadata?.annotations;
   if (!labels && !annotations) return null;
   return (
-    <Section title="标签与注解">
+    <Section title={tr('标签与注解')}>
       <div className="labels-block">
         <div className="labels-label">Labels</div>
         <KeyValueChips values={labels} limit={16} />

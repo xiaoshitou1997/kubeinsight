@@ -1,6 +1,8 @@
+import { getLang } from '../i18n';
+
 export function formatAge(seconds: number | null | undefined): string {
   if (seconds === null || seconds === undefined || Number.isNaN(seconds)) return '—';
-  if (seconds < 5) return '刚刚';
+  if (seconds < 5) return '0s';
   if (seconds < 60) return `${Math.floor(seconds)}s`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m`;
@@ -26,7 +28,7 @@ export function formatDateTime(timestamp: string | undefined | null): string {
   if (!timestamp) return '—';
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '—';
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(getLang() === 'zh' ? 'zh-CN' : 'en-US', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -39,7 +41,7 @@ export function formatDateTime(timestamp: string | undefined | null): string {
 
 export function formatClock(timestamp: string | number | Date): string {
   const date = new Date(timestamp);
-  return new Intl.DateTimeFormat('zh-CN', {
+  return new Intl.DateTimeFormat(getLang() === 'zh' ? 'zh-CN' : 'en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -84,7 +86,7 @@ export function formatPercent(value: number | null | undefined): string {
 
 export function formatNumber(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return new Intl.NumberFormat('zh-CN').format(value);
+  return new Intl.NumberFormat(getLang() === 'zh' ? 'zh-CN' : 'en-US').format(value);
 }
 
 export function truncate(value: string | undefined | null, max = 48): string {

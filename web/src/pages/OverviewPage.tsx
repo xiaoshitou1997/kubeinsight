@@ -21,9 +21,10 @@ import type { Overview } from '../types';
 import { Badge, ErrorState, PageHeader, Skeleton } from '../components/ui';
 import { Meter, PhaseDonut, Ring } from '../components/Gauge';
 import { resourceForKind } from '../catalog';
+import { tr } from '../i18n';
 
 export function OverviewPage() {
-  useDocumentTitle('概览');
+  useDocumentTitle(tr('概览'));
   const { cluster, clusterInfo, namespace, setNamespace, openResource, refreshNow, lastRefresh, refreshInterval } =
     useApp();
   const query = useApiQuery<Overview>(
@@ -52,7 +53,7 @@ export function OverviewPage() {
   if (query.error && !data) {
     return (
       <div className="page">
-        <PageHeader title="集群概览" description="读取集群状态失败" />
+        <PageHeader title={tr('集群概览')} description={tr('读取集群状态失败')} />
         <ErrorState error={query.error} onRetry={query.refetch} />
       </div>
     );
@@ -61,7 +62,7 @@ export function OverviewPage() {
   if (!data) {
     return (
       <div className="page">
-        <PageHeader title="集群概览" description="正在汇总节点、工作负载与事件…" />
+        <PageHeader title={tr('集群概览')} description={tr('正在汇总节点、工作负载与事件…')} />
         <div className="kpi-grid">
           {Array.from({ length: 4 }).map((_, index) => (
             <div className="kpi-card" key={index}>
@@ -96,17 +97,17 @@ export function OverviewPage() {
     <div className="page overview-page">
       <PageHeader
         eyebrow="CLUSTER OVERVIEW"
-        title="集群概览"
+        title={tr('集群概览')}
         description={
           <span className="overview-desc">
             {clusterInfo?.name}
             <span className="dot-sep" />
             {namespace ? (
               <>
-                命名空间 <code>{namespace}</code>
+                {tr('命名空间')} <code>{namespace}</code>
               </>
             ) : (
-              '全部命名空间'
+              tr('全部命名空间')
             )}
             <span className="dot-sep" />
             <span className="mono">{data.version?.gitVersion ?? '—'}</span>
@@ -115,11 +116,16 @@ export function OverviewPage() {
         actions={
           <>
             <span className="refresh-meta">
-              {refreshInterval ? `每 ${refreshInterval}s 自动刷新` : '手动刷新'} · 更新于{' '}
+              {refreshInterval
+                ? tr('每 {{seconds}}s 自动刷新', 'Auto-refresh every {{seconds}}s', {
+                    seconds: refreshInterval,
+                  })
+                : tr('手动刷新')}{' '}
+              · {tr('更新于')}{' '}
               {formatAge(Math.max(0, Math.round((Date.now() - lastRefresh) / 1000)))}
             </span>
             <button type="button" className="btn btn-ghost btn-sm" onClick={refreshNow}>
-              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> 刷新
+              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> {tr('刷新')}
             </button>
           </>
         }
@@ -136,25 +142,37 @@ export function OverviewPage() {
         <KpiCard
           icon={Server}
           tone={nodes.ready === nodes.total ? 'ok' : 'warn'}
-          label="节点就绪"
+          label={tr('节点就绪')}
           value={`${nodes.ready}/${nodes.total}`}
-          detail={nodes.unschedulable > 0 ? `${nodes.unschedulable} 个节点已封锁` : '全部节点可调度'}
+          detail={
+            nodes.unschedulable > 0
+              ? tr('{{count}} 个节点已封锁', '{{count}} node(s) cordoned', {
+                  count: nodes.unschedulable,
+                })
+              : tr('全部节点可调度')
+          }
           meter={nodes.total > 0 ? (nodes.ready / nodes.total) * 100 : 0}
         />
         <KpiCard
           icon={Box}
           tone={pods.notReady > 0 || pods.failed > 0 ? 'warn' : 'ok'}
-          label="运行中的 Pod"
+          label={tr('运行中的 Pod')}
           value={String(pods.running)}
-          detail={`${pods.pending} 等待 · ${pods.failed} 失败 · ${pods.notReady} 未就绪`}
+          detail={tr(
+            `${pods.pending} 等待 · ${pods.failed} 失败 · ${pods.notReady} 未就绪`,
+            `${pods.pending} pending · ${pods.failed} failed · ${pods.notReady} not ready`,
+          )}
           meter={pods.total > 0 ? (pods.ready / pods.total) * 100 : 0}
         />
         <KpiCard
           icon={Boxes}
           tone={workloads.deployments.degraded + otherDegraded > 0 ? 'warn' : 'ok'}
-          label="工作负载就绪"
+          label={tr('工作负载就绪')}
           value={`${workloads.deployments.ready}/${workloads.deployments.total}`}
-          detail={`${workloads.deployments.degraded + otherDegraded} 个未达标 · Deployments`}
+          detail={tr(
+            `${workloads.deployments.degraded + otherDegraded} 个未达标 · Deployments`,
+            `${workloads.deployments.degraded + otherDegraded} degraded · Deployments`,
+          )}
           meter={
             workloads.deployments.total > 0
               ? (workloads.deployments.ready / workloads.deployments.total) * 100
@@ -164,9 +182,12 @@ export function OverviewPage() {
         <KpiCard
           icon={TriangleAlert}
           tone={problems.length > 0 || warningEvents.length > 0 ? 'err' : 'ok'}
-          label="需要关注"
+          label={tr('需要关注')}
           value={String(problems.length + warningEvents.length)}
-          detail={`${pods.crashLoop} CrashLoop · ${pods.restarts} 次重启`}
+          detail={tr(
+            `${pods.crashLoop} CrashLoop · ${pods.restarts} 次重启`,
+            `${pods.crashLoop} CrashLoop · ${pods.restarts} restarts`,
+          )}
           meter={Math.min(100, (problems.length + warningEvents.length) * 12)}
           pulse={pods.crashLoop > 0}
         />
@@ -175,11 +196,14 @@ export function OverviewPage() {
       <div className="overview-grid overview-grid-primary">
         <section className="panel pressure-panel">
           <PanelHead
-            title="资源压力"
+            title={tr('资源压力')}
             subtitle={
               metricsAvailable
-                ? `${usage.nodeCount}/${nodes.total} 个节点上报指标`
-                : 'metrics-server 不可用，展示调度请求量'
+                ? tr('{{ready}}/{{total}} 个节点上报指标', '{{ready}}/{{total}} nodes reporting', {
+                    ready: usage.nodeCount,
+                    total: nodes.total,
+                  })
+                : tr('metrics-server 不可用，展示调度请求量')
             }
             icon={Cpu}
           />
@@ -197,8 +221,12 @@ export function OverviewPage() {
                   <strong>{metricsAvailable ? formatCpu(nodes.cpu.usedMillis) : formatCpu(nodes.cpu.requestedMillis)}</strong>
                   <span className="muted">
                     {metricsAvailable
-                      ? `已用 · 请求 ${formatCpu(nodes.cpu.requestedMillis)}`
-                      : `请求 · 可分配 ${formatCpu(nodes.cpu.allocatableMillis)}`}
+                      ? tr('已用 · 请求 {{value}}', 'used · requests {{value}}', {
+                          value: formatCpu(nodes.cpu.requestedMillis),
+                        })
+                      : tr('请求 · 可分配 {{value}}', 'requests · allocatable {{value}}', {
+                          value: formatCpu(nodes.cpu.allocatableMillis),
+                        })}
                   </span>
                 </div>
               </div>
@@ -209,7 +237,7 @@ export function OverviewPage() {
               />
               <div className="pressure-row">
                 <span className="pressure-row-label">
-                  <MemoryStick size={14} /> 内存
+                  <MemoryStick size={14} /> {tr('内存')}
                 </span>
                 <div className="pressure-row-values">
                   <strong>
@@ -217,8 +245,12 @@ export function OverviewPage() {
                   </strong>
                   <span className="muted">
                     {metricsAvailable
-                      ? `已用 · 请求 ${formatBytes(nodes.memory.requestedBytes)}`
-                      : `请求 · 可分配 ${formatBytes(nodes.memory.allocatableBytes)}`}
+                      ? tr('已用 · 请求 {{value}}', 'used · requests {{value}}', {
+                          value: formatBytes(nodes.memory.requestedBytes),
+                        })
+                      : tr('请求 · 可分配 {{value}}', 'requests · allocatable {{value}}', {
+                          value: formatBytes(nodes.memory.allocatableBytes),
+                        })}
                   </span>
                 </div>
               </div>
@@ -229,15 +261,15 @@ export function OverviewPage() {
               />
               <div className="pressure-foot">
                 <div>
-                  <span className="muted">可分配 CPU</span>
+                  <span className="muted">{tr('可分配 CPU')}</span>
                   <strong>{formatCpu(nodes.cpu.allocatableMillis)}</strong>
                 </div>
                 <div>
-                  <span className="muted">可分配内存</span>
+                  <span className="muted">{tr('可分配内存')}</span>
                   <strong>{formatBytes(nodes.memory.allocatableBytes)}</strong>
                 </div>
                 <div>
-                  <span className="muted">命名空间</span>
+                  <span className="muted">{tr('命名空间')}</span>
                   <strong>{data.namespaces.total}</strong>
                 </div>
               </div>
@@ -247,12 +279,15 @@ export function OverviewPage() {
 
         <section className="panel pod-panel">
           <PanelHead
-            title="Pod 分布"
-            subtitle={`共 ${pods.total} 个${pods.truncated ? '（已截断）' : ''}`}
+            title={tr('Pod 分布')}
+            subtitle={tr(
+              `共 ${pods.total} 个${pods.truncated ? '（已截断）' : ''}`,
+              `${pods.total} pods${pods.truncated ? ' (truncated)' : ''}`,
+            )}
             icon={Activity}
             action={
               <Link className="panel-link" to="/r/pods">
-                全部 Pods <ArrowRight size={13} />
+                {tr('全部 Pods')} <ArrowRight size={13} />
               </Link>
             }
           />
@@ -276,7 +311,7 @@ export function OverviewPage() {
               <LegendRow color="var(--text-dim)" label="Unknown" value={pods.unknown} />
               <div className="phase-legend-foot">
                 <span>
-                  总重启 <strong className={pods.restarts > 0 ? 'text-warn' : ''}>{pods.restarts}</strong>
+                  {tr('总重启')} <strong className={pods.restarts > 0 ? 'text-warn' : ''}>{pods.restarts}</strong>
                 </span>
                 <span>
                   CrashLoop <strong className={pods.crashLoop > 0 ? 'text-err' : ''}>{pods.crashLoop}</strong>
@@ -290,12 +325,15 @@ export function OverviewPage() {
       <div className="overview-grid">
         <section className="panel attention-panel">
           <PanelHead
-            title="需要关注"
-            subtitle={`${problems.length} 个异常 Pod · ${warningEvents.length} 条告警事件`}
+            title={tr('需要关注')}
+            subtitle={tr(
+              `${problems.length} 个异常 Pod · ${warningEvents.length} 条告警事件`,
+              `${problems.length} problem pods · ${warningEvents.length} warning events`,
+            )}
             icon={TriangleAlert}
             action={
               <Link className="panel-link" to="/events">
-                事件中心 <ArrowRight size={13} />
+                {tr('事件中心')} <ArrowRight size={13} />
               </Link>
             }
           />
@@ -304,8 +342,8 @@ export function OverviewPage() {
               <div className="all-good">
                 <span className="all-good-icon">✓</span>
                 <div>
-                  <strong>没有发现异常</strong>
-                  <p>所有 Pod 与工作负载处于健康状态。</p>
+                  <strong>{tr('没有发现异常')}</strong>
+                  <p>{tr('所有 Pod 与工作负载处于健康状态。')}</p>
                 </div>
               </div>
             )}
@@ -320,12 +358,14 @@ export function OverviewPage() {
                 <span className="attention-main">
                   <span className="attention-name">{problem.name}</span>
                   <span className="attention-meta mono">
-                    {problem.namespace} · {problem.node ?? '未调度'}
+                    {problem.namespace} · {problem.node ?? tr('未调度')}
                   </span>
                 </span>
                 <Badge tone={statusTone(problem.reason)}>{problem.reason}</Badge>
                 <span className="attention-side">
-                  {problem.restarts > 0 ? `${problem.restarts} 重启` : formatAge(problem.ageSeconds)}
+                  {problem.restarts > 0
+                    ? tr('{{count}} 重启', '{{count}} restarts', { count: problem.restarts })
+                    : formatAge(problem.ageSeconds)}
                 </span>
               </button>
             ))}
@@ -350,12 +390,15 @@ export function OverviewPage() {
 
         <section className="panel workload-panel">
           <PanelHead
-            title="工作负载健康度"
-            subtitle={`${workloads.deployments.total} 个 Deployment · ${workloads.statefulSets.total} 个 StatefulSet`}
+            title={tr('工作负载健康度')}
+            subtitle={tr(
+              `${workloads.deployments.total} 个 Deployment · ${workloads.statefulSets.total} 个 StatefulSet`,
+              `${workloads.deployments.total} Deployments · ${workloads.statefulSets.total} StatefulSets`,
+            )}
             icon={Boxes}
             action={
               <Link className="panel-link" to="/r/deployments">
-                全部 <ArrowRight size={13} />
+                {tr('全部')} <ArrowRight size={13} />
               </Link>
             }
           />
@@ -364,8 +407,8 @@ export function OverviewPage() {
               <div className="all-good compact">
                 <span className="all-good-icon">✓</span>
                 <div>
-                  <strong>全部 Deployment 已就绪</strong>
-                  <p>当前范围内没有未达标的副本。</p>
+                  <strong>{tr('全部 Deployment 已就绪')}</strong>
+                  <p>{tr('当前范围内没有未达标的副本。')}</p>
                 </div>
               </div>
             )}
@@ -408,12 +451,15 @@ export function OverviewPage() {
 
       <section className="panel nodes-panel">
         <PanelHead
-          title="节点"
-          subtitle={`${nodes.ready}/${nodes.total} Ready · ${nodes.unschedulable} 封锁`}
+          title={tr('节点')}
+          subtitle={tr(
+            `${nodes.ready}/${nodes.total} Ready · ${nodes.unschedulable} 封锁`,
+            `${nodes.ready}/${nodes.total} Ready · ${nodes.unschedulable} cordoned`,
+          )}
           icon={Server}
           action={
             <Link className="panel-link" to="/r/nodes">
-              节点列表 <ArrowRight size={13} />
+              {tr('节点列表')} <ArrowRight size={13} />
             </Link>
           }
         />
@@ -472,12 +518,15 @@ export function OverviewPage() {
       <div className="overview-grid">
         <section className="panel namespace-panel">
           <PanelHead
-            title="命名空间分布"
-            subtitle={`${data.namespaces.total} 个命名空间`}
+            title={tr('命名空间分布')}
+            subtitle={tr(
+              `${data.namespaces.total} 个命名空间`,
+              `${data.namespaces.total} namespaces`,
+            )}
             icon={Boxes}
             action={
               <Link className="panel-link" to="/r/namespaces">
-                管理 <ArrowRight size={13} />
+                {tr('管理')} <ArrowRight size={13} />
               </Link>
             }
           />
@@ -488,7 +537,9 @@ export function OverviewPage() {
                 className={classNames('namespace-bar-row', namespace === item.name && 'is-selected')}
                 key={item.name}
                 onClick={() => setNamespace(namespace === item.name ? '' : item.name)}
-                title={`筛选命名空间 ${item.name}`}
+                title={tr('筛选命名空间 {{namespace}}', 'Filter by namespace {{namespace}}', {
+                  namespace: item.name,
+                })}
               >
                 <span className="namespace-name mono">{item.name}</span>
                 <span className="namespace-bar">
@@ -502,17 +553,22 @@ export function OverviewPage() {
 
         <section className="panel events-panel">
           <PanelHead
-            title="最近告警事件"
-            subtitle={`${warningEvents.length} 条 Warning`}
+            title={tr('最近告警事件')}
+            subtitle={tr(
+              `${warningEvents.length} 条 Warning`,
+              `${warningEvents.length} warnings`,
+            )}
             icon={Activity}
             action={
               <Link className="panel-link" to="/events">
-                全部事件 <ArrowRight size={13} />
+                {tr('全部事件')} <ArrowRight size={13} />
               </Link>
             }
           />
           <div className="event-feed">
-            {warningEvents.length === 0 && <div className="muted empty-inline">当前没有告警事件。</div>}
+            {warningEvents.length === 0 && (
+              <div className="muted empty-inline">{tr('当前没有告警事件。')}</div>
+            )}
             {warningEvents.slice(0, 6).map((event, index) => (
               <button
                 type="button"

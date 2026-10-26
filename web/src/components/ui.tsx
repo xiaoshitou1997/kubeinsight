@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import { LoaderCircle, RefreshCw, Search, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { classNames } from '../lib/format';
+import { tr } from '../i18n';
 import type { ApiError } from '../api';
 
 export type Tone = 'ok' | 'warn' | 'err' | 'info' | 'neutral' | 'muted';
@@ -39,7 +40,7 @@ export function Ratio({ ready, total }: { ready: number; total: number }) {
 }
 
 export function Spinner({ size = 14 }: { size?: number }) {
-  return <LoaderCircle size={size} className="spin" aria-label="加载中" />;
+  return <LoaderCircle size={size} className="spin" aria-label={tr('加载中')} />;
 }
 
 export function IconButton({
@@ -91,8 +92,12 @@ export function EmptyState({
       <div className="empty-icon">
         <Icon size={22} />
       </div>
-      <div className="empty-title">{title}</div>
-      {description && <div className="empty-desc">{description}</div>}
+      <div className="empty-title">{typeof title === 'string' ? tr(title) : title}</div>
+      {description && (
+        <div className="empty-desc">
+          {typeof description === 'string' ? tr(description) : description}
+        </div>
+      )}
       {action && <div className="empty-action">{action}</div>}
     </div>
   );
@@ -101,11 +106,11 @@ export function EmptyState({
 export function ErrorState({ error, onRetry }: { error: ApiError | Error | null; onRetry?: () => void }) {
   return (
     <div className="error-state">
-      <div className="error-title">请求失败</div>
-      <div className="error-message">{error?.message ?? '未知错误'}</div>
+      <div className="error-title">{tr('请求失败')}</div>
+      <div className="error-message">{error?.message ?? tr('未知错误')}</div>
       {onRetry && (
         <button type="button" className="btn btn-ghost" onClick={onRetry}>
-          <RefreshCw size={14} /> 重试
+          <RefreshCw size={14} /> {tr('重试')}
         </button>
       )}
     </div>
@@ -166,13 +171,13 @@ export function SearchBox({
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
+        placeholder={tr(placeholder)}
         autoFocus={autoFocus}
         spellCheck={false}
-        aria-label={placeholder}
+        aria-label={tr(placeholder)}
       />
       {value ? (
-        <button type="button" className="search-clear" onClick={() => onChange('')} aria-label="清除">
+        <button type="button" className="search-clear" onClick={() => onChange('')} aria-label={tr('清除')}>
           <X size={13} />
         </button>
       ) : (
@@ -208,9 +213,13 @@ export function PageHeader({
           </div>
         )}
         <div>
-          {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-          <h1 className="page-title">{title}</h1>
-          {description && <div className="page-desc">{description}</div>}
+          {eyebrow && <div className="eyebrow">{typeof eyebrow === 'string' ? tr(eyebrow) : eyebrow}</div>}
+          <h1 className="page-title">{typeof title === 'string' ? tr(title) : title}</h1>
+          {description && (
+            <div className="page-desc">
+              {typeof description === 'string' ? tr(description) : description}
+            </div>
+          )}
         </div>
       </div>
       {actions && <div className="page-actions">{actions}</div>}
@@ -221,7 +230,7 @@ export function PageHeader({
 export function Field({ label, children, mono }: { label: string; children: ReactNode; mono?: boolean }) {
   return (
     <div className="field">
-      <div className="field-label">{label}</div>
+      <div className="field-label">{tr(label)}</div>
       <div className={classNames('field-value', mono && 'mono')}>{children}</div>
     </div>
   );

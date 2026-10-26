@@ -31,6 +31,21 @@ export interface CapabilityTarget {
   namespaced?: boolean;
 }
 
+export type ThemeMode = 'system' | 'light' | 'dark';
+
+function useSystemDark(): boolean {
+  const [dark, setDark] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setDark(media.matches);
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, []);
+  return dark;
+}
+
 interface AppContextValue {
   meta: Meta;
   reloadMeta: () => Promise<void>;
@@ -46,6 +61,8 @@ interface AppContextValue {
   refreshNow: () => void;
   lastRefresh: number;
   theme: 'dark' | 'light';
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
   access: AccessResponse | undefined;
   can: (resource: CapabilityTarget, verb: string) => boolean;
@@ -79,7 +96,10 @@ export function AppProvider({
   );
   const [namespace, setNamespaceState] = useState('');
   const [refreshInterval, setRefreshIntervalState] = usePersistentState<number>('ki.refreshInterval', 10);
-  const [theme, setTheme] = usePersistentState<'dark' | 'light'>('ki.theme', 'dark');
+  const [themeMode, setThemeMode] = usePersistentState<ThemeMode>('ki.theme', 'system');
+  const systemDark = useSystemDark();
+  const theme: 'dark' | 'light' =
+    themeMode === 'system' ? (systemDark ? 'dark' : 'light') : themeMode;
   const [selection, setSelection] = useState<ResourceRef | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -106,10 +126,10 @@ export function AppProvider({
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem('ki.theme', JSON.stringify(theme));
+    document.documentElement.dataset.themeMode = themeMode;
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) metaTheme.setAttribute('content', theme === 'dark' ? '#0a0d12' : '#f4f6fa');
-  }, [theme]);
+  }, [theme, themeMode]);
 
   const setCluster = useCallback((id: string) => {
     setClusterState(id);
@@ -203,8 +223,8 @@ export function AppProvider({
   const closeResource = useCallback(() => setSelection(null), []);
 
   const toggleTheme = useCallback(() => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }, [theme, setTheme]);
+    setThemeMode(theme === 'dark' ? 'light' : 'dark');
+  }, [theme, setThemeMode]);
 
   const clusterInfo = meta.clusters.find((item) => item.id === cluster);
 
@@ -225,6 +245,8 @@ export function AppProvider({
         refreshNow,
         lastRefresh,
         theme,
+        themeMode,
+        setThemeMode,
         toggleTheme,
         access: accessQuery.data,
         can,

@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../AppContext';
 import { NAV_GROUPS, RESOURCES, resourceForKind } from '../catalog';
 import { useApiQuery, useDebounced } from '../hooks';
+import { tr, useLang } from '../i18n';
 import { classNames } from '../lib/format';
 import { statusTone } from '../lib/kube';
 import type { SearchResponse } from '../types';
@@ -32,6 +33,7 @@ interface PaletteEntry {
 
 export function CommandPalette({ onClose }: { onClose: () => void }) {
   const { cluster, namespace, openResource } = useApp();
+  const lang = useLang();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -63,9 +65,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     const entries: PaletteEntry[] = [
       {
         id: 'overview',
-        group: '导航',
-        label: '集群概览',
-        sub: '节点、Pod、事件与资源压力',
+        group: tr('导航'),
+        label: tr('集群概览'),
+        sub: tr('节点、Pod、事件与资源压力'),
         icon: Activity,
         run: () => navigate('/'),
       },
@@ -76,9 +78,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         if (!resource) continue;
         entries.push({
           id: `nav-${key}`,
-          group: '导航',
+          group: tr('导航'),
           label: resource.label,
-          sub: group.label,
+          sub: tr(group.label),
           icon: resource.icon,
           run: () => navigate(`/r/${key}`),
         });
@@ -87,31 +89,31 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     entries.push(
       {
         id: 'events',
-        group: '导航',
-        label: '事件',
-        sub: '集群事件流',
+        group: tr('导航'),
+        label: tr('事件'),
+        sub: tr('集群事件流'),
         icon: ScrollText,
         run: () => navigate('/events'),
       },
       {
         id: 'explorer',
-        group: '导航',
+        group: tr('导航'),
         label: 'API Explorer',
-        sub: '浏览全部 API 资源与 CRD',
+        sub: tr('浏览全部 API 资源与 CRD'),
         icon: ListTree,
         run: () => navigate('/explorer'),
       },
       {
         id: 'settings',
-        group: '导航',
-        label: '设置与权限',
-        sub: '集群、身份与偏好',
+        group: tr('导航'),
+        label: tr('设置与权限'),
+        sub: tr('集群、身份与偏好'),
         icon: Settings,
         run: () => navigate('/settings'),
       },
     );
     return entries;
-  }, [navigate]);
+  }, [navigate, lang]);
 
   const lower = query.trim().toLowerCase();
 
@@ -128,9 +130,11 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       const def = resourceForKind(item.kind, item.group);
       return {
         id: `res-${item.kind}-${item.namespace ?? ''}-${item.name}`,
-        group: '资源',
+        group: tr('资源'),
         label: item.name,
-        sub: item.namespace ? `${item.kind} · ${item.namespace}` : `${item.kind} · 集群级`,
+        sub: item.namespace
+          ? `${item.kind} · ${item.namespace}`
+          : `${item.kind} · ${tr('集群级')}`,
         icon: def?.icon ?? Box,
         badge: def?.label ?? item.kind,
         status: item.status,
@@ -147,7 +151,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
           }),
       };
     });
-  }, [search.data, openResource]);
+  }, [search.data, openResource, lang]);
 
   const entries = useMemo(() => [...filteredNav, ...resourceEntries], [filteredNav, resourceEntries]);
 
@@ -163,7 +167,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   const execute = (entry: PaletteEntry | undefined) => {
     if (!entry) return;
     entry.run();
-    if (entry.group !== '资源') onClose();
+    if (entry.group !== tr('资源')) onClose();
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -188,7 +192,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="palette" role="dialog" aria-modal="true" aria-label="资源搜索">
+      <div className="palette" role="dialog" aria-modal="true" aria-label={tr('资源搜索')}>
         <div className="palette-input-row">
           <Search size={18} />
           <input
@@ -196,9 +200,9 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="搜索跨命名空间的 Pod、Deployment、Service、Node…"
+            placeholder={tr('搜索跨命名空间的 Pod、Deployment、Service、Node…')}
             spellCheck={false}
-            aria-label="搜索资源"
+            aria-label={tr('搜索资源')}
           />
           {search.loading ? <LoaderCircle size={16} className="spin" /> : <Kbd>ESC</Kbd>}
         </div>
@@ -206,7 +210,8 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         <div className="palette-results" ref={listRef}>
           {entries.length === 0 && !search.loading && (
             <div className="palette-empty">
-              没有找到与 <strong>{query}</strong> 匹配的资源
+              {tr('没有找到与', 'No resources matching')} <strong>{query}</strong>{' '}
+              {tr('匹配的资源', '')}
             </div>
           )}
           {entries.map((entry, index) => {
@@ -241,15 +246,15 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
             );
           })}
           {search.loading && entries.length === 0 && (
-            <div className="palette-empty">正在搜索集群资源…</div>
+            <div className="palette-empty">{tr('正在搜索集群资源…')}</div>
           )}
         </div>
 
         <div className="palette-footer">
-          <span><Kbd>↑</Kbd><Kbd>↓</Kbd> 选择</span>
-          <span><Kbd>↵</Kbd> 打开</span>
-          <span><Kbd>esc</Kbd> 关闭</span>
-          <span className="palette-footer-hint">支持跨命名空间模糊匹配</span>
+          <span><Kbd>↑</Kbd><Kbd>↓</Kbd> {tr('选择')}</span>
+          <span><Kbd>↵</Kbd> {tr('打开')}</span>
+          <span><Kbd>esc</Kbd> {tr('关闭')}</span>
+          <span className="palette-footer-hint">{tr('支持跨命名空间模糊匹配')}</span>
         </div>
       </div>
     </div>,

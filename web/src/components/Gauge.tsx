@@ -1,4 +1,5 @@
 import { classNames } from '../lib/format';
+import { tr } from '../i18n';
 import type { Tone } from './ui';
 
 const COLORS: Record<string, string> = {
@@ -61,7 +62,7 @@ export function Ring({
       </svg>
       <div className="ring-center">
         <span className="ring-value">{value === null || value === undefined ? '—' : `${Math.round(value)}%`}</span>
-        {label && <span className="ring-label">{label}</span>}
+        {label && <span className="ring-label">{tr(label)}</span>}
       </div>
     </div>
   );
@@ -86,7 +87,7 @@ export function Meter({
     <div className={classNames('meter', compact && 'meter-compact')}>
       {(label || detail) && (
         <div className="meter-head">
-          <span className="meter-label">{label}</span>
+          <span className="meter-label">{label ? tr(label) : ''}</span>
           <span className={classNames('meter-detail', `text-${resolved}`)}>{detail ?? `${Math.round(safe)}%`}</span>
         </div>
       )}
@@ -119,7 +120,7 @@ export function PhaseDonut({
   let offset = 0;
   return (
     <div className="donut" style={{ width: size, height: size }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Pod 阶段分布">
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={tr('Pod 阶段分布')}>
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--track)" strokeWidth={thickness} />
         {segments.map((segment) => {
           if (segment.value === 0) return null;

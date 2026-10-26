@@ -12,6 +12,7 @@ import {
 import { useState, type ReactNode } from 'react';
 import { post } from '../api';
 import { useApp } from '../AppContext';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 import type { KubeObject } from '../types';
 import { Menu, type MenuItem } from './Menu';
@@ -96,7 +97,7 @@ export function QuickActionsMenu({
   canPatch,
   onChanged,
   variant = 'button',
-  label = '变更',
+  label = tr('变更'),
 }: {
   object: KubeObject;
   target: QuickTarget;
@@ -113,26 +114,26 @@ export function QuickActionsMenu({
   const items: MenuItem[] = [];
   if (supportsImageUpdate(kind) && hasContainers) {
     items.push({
-      label: '更新镜像',
+      label: tr('更新镜像'),
       icon: <Box size={14} />,
       onSelect: () => setModal('image'),
     });
   }
   if (supportsResourceUpdate(kind) && hasContainers) {
     items.push({
-      label: '资源配额',
+      label: tr('资源配额'),
       icon: <Cpu size={14} />,
       onSelect: () => setModal('resources'),
     });
   }
   items.push({
-    label: '标签与注解',
+    label: tr('标签与注解'),
     icon: <Settings size={14} />,
     onSelect: () => setModal('metadata'),
   });
   if (kind === 'CronJob') {
     items.push({
-      label: '调度设置',
+      label: tr('调度设置'),
       icon: <Clock size={14} />,
       onSelect: () => setModal('schedule'),
     });
@@ -149,10 +150,10 @@ export function QuickActionsMenu({
     <>
       <Menu
         width={220}
-        ariaLabel="快捷变更"
+        ariaLabel={tr('快捷变更')}
         button={
           variant === 'icon' ? (
-            <button type="button" className="icon-btn" aria-label="快捷变更">
+            <button type="button" className="icon-btn" aria-label={tr('快捷变更')}>
               <SlidersHorizontal size={15} />
             </button>
           ) : (
@@ -217,7 +218,7 @@ function ModalFooter({
   onSubmit,
   busy,
   disabled,
-  submitLabel = '应用',
+  submitLabel = tr('应用'),
 }: {
   onClose: () => void;
   onSubmit: () => void;
@@ -228,11 +229,11 @@ function ModalFooter({
   return (
     <>
       <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
-        取消
+        {tr('取消')}
       </button>
       <button type="button" className="btn btn-primary" onClick={onSubmit} disabled={busy || disabled}>
         {busy ? <Spinner /> : null}
-        {busy ? '应用中…' : submitLabel}
+        {busy ? tr('应用中…') : tr(submitLabel)}
       </button>
     </>
   );
@@ -302,11 +303,17 @@ function ImageUpdateModal({
       );
       const suffix =
         kind === 'Pod'
-          ? '，kubelet 将重启对应容器'
+          ? tr('，kubelet 将重启对应容器', '; kubelet will restart the containers')
           : kind === 'CronJob'
-            ? '，只影响之后创建的 Job'
-            : '，滚动发布已触发';
-      notify(`已更新 ${totalChanges} 个镜像${suffix}`, 'ok');
+            ? tr('，只影响之后创建的 Job', '; applies to future Jobs')
+            : tr('，滚动发布已触发', '; rolling update triggered');
+      notify(
+        tr(
+          `已更新 ${totalChanges} 个镜像${suffix}`,
+          `Updated ${totalChanges} image(s)${suffix}`,
+        ),
+        'ok',
+      );
       onApplied();
     } catch (err) {
       setError((err as Error).message);
@@ -321,7 +328,7 @@ function ImageUpdateModal({
     <Modal
       open
       onClose={onClose}
-      title="更新镜像"
+      title={tr('更新镜像')}
       subtitle={`${kind} / ${target.namespace ? `${target.namespace}/` : ''}${target.name}`}
       size="lg"
       footer={
@@ -330,7 +337,11 @@ function ImageUpdateModal({
           onSubmit={() => void submit()}
           busy={busy}
           disabled={totalChanges === 0 || invalid}
-          submitLabel={totalChanges > 0 ? `更新 ${totalChanges} 个镜像` : '应用'}
+          submitLabel={
+            totalChanges > 0
+              ? tr(`更新 ${totalChanges} 个镜像`, `Update ${totalChanges} image(s)`)
+              : tr('应用')
+          }
         />
       }
     >
@@ -338,11 +349,14 @@ function ImageUpdateModal({
         <div className="quick-warning">
           {kind === 'Pod'
             ? owner
-              ? `该 Pod 由 ${owner.kind} 管理。直接改镜像可能被控制器覆盖，建议修改上层工作负载。`
-              : '直接修改 Pod 镜像会重启对应容器，不会创建新的 Pod。'
+              ? tr(
+                  `该 Pod 由 ${owner.kind} 管理。直接改镜像可能被控制器覆盖，建议修改上层工作负载。`,
+                  `This Pod is managed by ${owner.kind}. Direct image changes may be reverted by the controller; edit the workload instead.`,
+                )
+              : tr('直接修改 Pod 镜像会重启对应容器，不会创建新的 Pod。')
             : kind === 'CronJob'
-              ? '将更新 CronJob 的 Pod 模板；已创建的 Job 不会被修改。'
-              : '将更新 Pod 模板并触发一次滚动发布；服务在滚动过程中保持可用。'}
+              ? tr('将更新 CronJob 的 Pod 模板；已创建的 Job 不会被修改。')
+              : tr('将更新 Pod 模板并触发一次滚动发布；服务在滚动过程中保持可用。')}
         </div>
 
         <div className="image-editor">
@@ -355,7 +369,7 @@ function ImageUpdateModal({
                   {row.value.trim() !== row.image && <Badge tone="warn">modified</Badge>}
                 </div>
                 <div className="image-editor-current mono" title={row.image}>
-                  {row.image || '未设置镜像'}
+                  {row.image || tr('未设置镜像')}
                 </div>
               </div>
               <input
@@ -372,12 +386,12 @@ function ImageUpdateModal({
                 }}
                 placeholder="registry.example.com/app:tag"
                 spellCheck={false}
-                aria-label={`${row.name} 镜像`}
+                aria-label={tr('{{name}} 镜像', '{{name}} image', { name: row.name })}
               />
             </div>
           ))}
         </div>
-        <p className="form-hint">保留完整镜像地址与 tag；未修改的容器不会被写入 patch。</p>
+        <p className="form-hint">{tr('保留完整镜像地址与 tag；未修改的容器不会被写入 patch。')}</p>
       </ActionResult>
     </Modal>
   );
@@ -452,7 +466,9 @@ function ResourcesUpdateModal({
         params,
       );
       notify(
-        kind === 'CronJob' ? '资源配额已更新，后续 Job 将使用新配置' : '资源配额已更新，滚动发布已触发',
+        kind === 'CronJob'
+          ? tr('资源配额已更新，后续 Job 将使用新配置')
+          : tr('资源配额已更新，滚动发布已触发'),
         'ok',
       );
       onApplied();
@@ -467,7 +483,7 @@ function ResourcesUpdateModal({
     <Modal
       open
       onClose={onClose}
-      title="资源配额"
+      title={tr('资源配额')}
       subtitle={`${kind} / ${target.namespace ? `${target.namespace}/` : ''}${target.name}`}
       size="xl"
       footer={
@@ -475,23 +491,23 @@ function ResourcesUpdateModal({
           onClose={onClose}
           onSubmit={() => void submit()}
           busy={busy}
-          submitLabel="应用资源配额"
+          submitLabel={tr('应用资源配额')}
         />
       }
     >
       <ActionResult error={error}>
         <div className="quick-warning">
-          修改容器 requests / limits 会触发滚动发布；请确认 QoS、调度与 HPA 行为符合预期。留空表示移除该字段。
+          {tr('修改容器 requests / limits 会触发滚动发布；请确认 QoS、调度与 HPA 行为符合预期。留空表示移除该字段。')}
         </div>
         <div className="resources-editor-wrap">
           <table className="resources-editor">
             <thead>
               <tr>
-                <th>容器</th>
-                <th>CPU 请求</th>
-                <th>CPU 限制</th>
-                <th>内存请求</th>
-                <th>内存限制</th>
+                <th>{tr('容器')}</th>
+                <th>{tr('CPU 请求')}</th>
+                <th>{tr('CPU 限制')}</th>
+                <th>{tr('内存请求')}</th>
+                <th>{tr('内存限制')}</th>
               </tr>
             </thead>
             <tbody>
@@ -506,7 +522,9 @@ function ResourcesUpdateModal({
                         value={row.cpuRequest}
                         onChange={(event) => update(container.name, 'cpuRequest', event.target.value)}
                         placeholder="100m"
-                        aria-label={`${container.name} CPU 请求`}
+                        aria-label={tr('{{name}} CPU 请求', '{{name}} CPU request', {
+                          name: container.name,
+                        })}
                       />
                     </td>
                     <td>
@@ -515,7 +533,9 @@ function ResourcesUpdateModal({
                         value={row.cpuLimit}
                         onChange={(event) => update(container.name, 'cpuLimit', event.target.value)}
                         placeholder="500m"
-                        aria-label={`${container.name} CPU 限制`}
+                        aria-label={tr('{{name}} CPU 限制', '{{name}} CPU limit', {
+                          name: container.name,
+                        })}
                       />
                     </td>
                     <td>
@@ -524,7 +544,9 @@ function ResourcesUpdateModal({
                         value={row.memoryRequest}
                         onChange={(event) => update(container.name, 'memoryRequest', event.target.value)}
                         placeholder="128Mi"
-                        aria-label={`${container.name} 内存请求`}
+                        aria-label={tr('{{name}} 内存请求', '{{name}} memory request', {
+                          name: container.name,
+                        })}
                       />
                     </td>
                     <td>
@@ -533,7 +555,9 @@ function ResourcesUpdateModal({
                         value={row.memoryLimit}
                         onChange={(event) => update(container.name, 'memoryLimit', event.target.value)}
                         placeholder="256Mi"
-                        aria-label={`${container.name} 内存限制`}
+                        aria-label={tr('{{name}} 内存限制', '{{name}} memory limit', {
+                          name: container.name,
+                        })}
                       />
                     </td>
                   </tr>
@@ -549,7 +573,7 @@ function ResourcesUpdateModal({
             onClick={() => setValues(initial)}
             disabled={busy}
           >
-            <RotateCcw size={13} /> 恢复当前值
+            <RotateCcw size={13} /> {tr('恢复当前值')}
           </button>
         </div>
       </ActionResult>
@@ -588,10 +612,10 @@ function MetadataEditor({
           className="btn btn-ghost btn-sm"
           onClick={() => onChange([...rows, { key: '', value: '' }])}
         >
-          <Plus size={13} /> 添加
+          <Plus size={13} /> {tr('添加')}
         </button>
       </div>
-      {rows.length === 0 && <div className="muted meta-editor-empty">暂无条目</div>}
+      {rows.length === 0 && <div className="muted meta-editor-empty">{tr('暂无条目')}</div>}
       {rows.map((row, index) => (
         <div className="meta-editor-row" key={`${title}-${index}`}>
           <input
@@ -601,7 +625,7 @@ function MetadataEditor({
               onChange(rows.map((item, i) => (i === index ? { ...item, key: event.target.value } : item)))
             }
             placeholder={placeholderKey}
-            aria-label={`${title}键`}
+            aria-label={tr('{{title}}键', '{{title}} key', { title })}
             spellCheck={false}
           />
           <input
@@ -611,14 +635,14 @@ function MetadataEditor({
               onChange(rows.map((item, i) => (i === index ? { ...item, value: event.target.value } : item)))
             }
             placeholder="value"
-            aria-label={`${title}值`}
+            aria-label={tr('{{title}}值', '{{title}} value', { title })}
             spellCheck={false}
           />
           <button
             type="button"
             className="icon-btn icon-btn-danger"
             onClick={() => onChange(rows.filter((_, i) => i !== index))}
-            aria-label="删除条目"
+            aria-label={tr('删除条目')}
           >
             <Trash size={14} />
           </button>
@@ -661,7 +685,7 @@ function MetadataUpdateModal({
       const key = row.key.trim();
       if (!key) continue;
       if (seen.has(key)) {
-        throw new Error(`重复的键：${key}`);
+        throw new Error(tr(`重复的键：${key}`, `Duplicate key: ${key}`));
       }
       seen.add(key);
       result[key] = row.value;
@@ -683,7 +707,7 @@ function MetadataUpdateModal({
         { labels: labelPatch, annotations: annotationPatch },
         params,
       );
-      notify('标签与注解已更新', 'ok');
+      notify(tr('标签与注解已更新'), 'ok');
       onApplied();
     } catch (err) {
       setError((err as Error).message);
@@ -696,7 +720,7 @@ function MetadataUpdateModal({
     <Modal
       open
       onClose={onClose}
-      title="标签与注解"
+      title={tr('标签与注解')}
       subtitle={`${target.kind} / ${target.namespace ? `${target.namespace}/` : ''}${target.name}`}
       size="lg"
       footer={
@@ -704,13 +728,13 @@ function MetadataUpdateModal({
           onClose={onClose}
           onSubmit={() => void submit()}
           busy={busy}
-          submitLabel="保存标签与注解"
+          submitLabel={tr('保存标签与注解')}
         />
       }
     >
       <ActionResult error={error}>
         <div className="quick-warning">
-          直接修改对象元数据，不会触发工作负载滚动发布。删除条目后保存会从对象上移除对应键。
+          {tr('直接修改对象元数据，不会触发工作负载滚动发布。删除条目后保存会从对象上移除对应键。')}
         </div>
         <MetadataEditor
           title="Labels"
@@ -750,14 +774,14 @@ function ScheduleUpdateModal({
 
   const submit = async () => {
     if (!schedule.trim()) {
-      setError('调度表达式不能为空');
+      setError(tr('调度表达式不能为空'));
       return;
     }
     setBusy(true);
     setError(null);
     try {
       await post('/api/actions/schedule', { schedule: schedule.trim(), suspend, timeZone }, params);
-      notify('CronJob 调度已更新', 'ok');
+      notify(tr('CronJob 调度已更新'), 'ok');
       onApplied();
     } catch (err) {
       setError((err as Error).message);
@@ -770,19 +794,24 @@ function ScheduleUpdateModal({
     <Modal
       open
       onClose={onClose}
-      title="调度设置"
+      title={tr('调度设置')}
       subtitle={`CronJob / ${target.namespace ? `${target.namespace}/` : ''}${target.name}`}
       size="md"
       footer={
-        <ModalFooter onClose={onClose} onSubmit={() => void submit()} busy={busy} submitLabel="保存调度" />
+        <ModalFooter
+          onClose={onClose}
+          onSubmit={() => void submit()}
+          busy={busy}
+          submitLabel={tr('保存调度')}
+        />
       }
     >
       <ActionResult error={error}>
         <div className="quick-warning">
-          修改只影响之后创建的 Job；已经运行或已创建的 Job 不会被改动。
+          {tr('修改只影响之后创建的 Job；已经运行或已创建的 Job 不会被改动。')}
         </div>
         <label className="form-label" htmlFor="cron-schedule">
-          Cron 表达式
+          {tr('Cron 表达式')}
         </label>
         <input
           id="cron-schedule"
@@ -792,10 +821,10 @@ function ScheduleUpdateModal({
           placeholder="*/5 * * * *"
           spellCheck={false}
         />
-        <p className="form-hint">支持标准五段式表达式或 @hourly、@daily 等宏。</p>
+        <p className="form-hint">{tr('支持标准五段式表达式或 @hourly、@daily 等宏。')}</p>
 
         <label className="form-label" htmlFor="cron-timezone" style={{ marginTop: 14 }}>
-          时区（可选）
+          {tr('时区（可选）')}
         </label>
         <input
           id="cron-timezone"
@@ -808,7 +837,7 @@ function ScheduleUpdateModal({
 
         <label className="checkbox" style={{ marginTop: 16 }}>
           <input type="checkbox" checked={suspend} onChange={(event) => setSuspend(event.target.checked)} />
-          暂停调度（suspend）
+          {tr('暂停调度（suspend）')}
         </label>
       </ActionResult>
     </Modal>

@@ -1,3 +1,5 @@
+import { tr } from './i18n';
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,
@@ -84,15 +86,15 @@ export async function api<T>(
     });
   } catch (error) {
     if ((error as Error).name === 'AbortError') {
-      throw new ApiError(0, '请求超时或已取消');
+      throw new ApiError(0, tr('请求超时或已取消'));
     }
-    throw new ApiError(0, '无法连接到 KubeInsight 服务');
+    throw new ApiError(0, tr('无法连接到 KubeInsight 服务'));
   } finally {
     window.clearTimeout(timeout);
   }
 
   if (!response.ok) {
-    let message = `请求失败 (HTTP ${response.status})`;
+    let message = tr(`请求失败 (HTTP ${response.status})`, `Request failed (HTTP ${response.status})`);
     let code: string | undefined;
     try {
       const body = (await response.json()) as { error?: { message?: string; code?: string } };

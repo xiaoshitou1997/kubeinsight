@@ -10,6 +10,7 @@ import { QuickActionsMenu } from '../components/QuickActions';
 import { ApplyYamlModal } from '../components/YamlEditor';
 import { EmptyState, ErrorState, PageHeader, SearchBox } from '../components/ui';
 import { useApiQuery, useDocumentTitle } from '../hooks';
+import { tr } from '../i18n';
 import { formatPercent } from '../lib/format';
 import type { KubeObject, ListResponse, MetricsResponse } from '../types';
 import { NotFoundPage } from './NotFoundPage';
@@ -24,7 +25,7 @@ export function ResourceListPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
 
-  useDocumentTitle(def?.label ?? '资源');
+  useDocumentTitle(tr(def?.label ?? '资源'));
 
   const query = useApiQuery<ListResponse>(
     '/api/resources',
@@ -188,12 +189,12 @@ export function ResourceListPage() {
   const empty = (
     <EmptyState
       icon={def.icon}
-      title={`还没有 ${def.label}`}
+      title={tr(`还没有 ${def.label}`, `No ${def.label} yet`)}
       description={def.description}
       action={
         canCreate ? (
           <button type="button" className="btn btn-primary btn-sm" onClick={() => setCreateOpen(true)}>
-            <Plus size={14} /> 创建资源
+            <Plus size={14} /> {tr('创建资源')}
           </button>
         ) : undefined
       }
@@ -210,10 +211,10 @@ export function ResourceListPage() {
         actions={
           <>
             <span className="refresh-meta">
-              {rows.length} 项{search ? ` · 匹配 ${filtered.length}` : ''}
+              {rows.length} {tr('项')}{search ? ` · ${tr('匹配')} ${filtered.length}` : ''}
             </span>
             <button type="button" className="btn btn-ghost btn-sm" onClick={refreshNow}>
-              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> 刷新
+              <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> {tr('刷新')}
             </button>
             <button
               type="button"
@@ -221,19 +222,31 @@ export function ResourceListPage() {
               onClick={() => setCreateOpen(true)}
               disabled={!canCreate}
             >
-              <Plus size={14} /> 创建
+              <Plus size={14} /> {tr('创建')}
             </button>
           </>
         }
       />
 
       <div className="list-toolbar">
-        <SearchBox value={search} onChange={setSearch} placeholder={`过滤 ${def.label} 名称…`} />
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder={tr(`过滤 ${def.label} 名称…`, `Filter ${def.label} by name…`)}
+        />
         <div className="list-toolbar-info">
           <span className="mono muted">
-            {def.namespaced ? (namespace ? `ns/${namespace}` : '全部命名空间') : '集群级资源'}
+            {def.namespaced
+              ? namespace
+                ? `ns/${namespace}`
+                : tr('全部命名空间')
+              : tr('集群级资源')}
           </span>
-          {refreshInterval > 0 && <span className="muted">· 每 {refreshInterval}s 自动刷新</span>}
+          {refreshInterval > 0 && (
+            <span className="muted">
+              · {tr('每 {{seconds}}s 自动刷新', 'every {{seconds}}s', { seconds: refreshInterval })}
+            </span>
+          )}
         </div>
       </div>
 
@@ -268,14 +281,20 @@ export function ResourceListPage() {
 
       <div className="list-footer">
         <TriangleAlert size={12} />
-        <span>查看的是实时集群数据；删除、伸缩等写操作会以当前 kubeconfig 身份直接作用于集群。</span>
+        <span>
+          {tr('查看的是实时集群数据；删除、伸缩等写操作会以当前 kubeconfig 身份直接作用于集群。')}
+        </span>
       </div>
 
       <ApplyYamlModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        title={`创建 ${def.label}`}
-        subtitle={namespace ? `命名空间 ${namespace}` : '在 YAML 中指定命名空间'}
+        title={tr(`创建 ${def.label}`, `Create ${def.label}`)}
+        subtitle={
+          namespace
+            ? tr(`命名空间 ${namespace}`, `Namespace ${namespace}`)
+            : tr('在 YAML 中指定命名空间')
+        }
         initialYaml={templates[0].yaml}
         mode="create"
         templates={templates}

@@ -8,7 +8,8 @@ KubeInsight 面向需要「打开浏览器就能看清并处理集群」的团�
 - 直接使用本机 kubeconfig 或 Pod 内 ServiceAccount，不落库、不缓存集群数据
 - 默认脱敏 Secret；支持只读模式、共享令牌认证与 RBAC 感知
 - 通过 API Discovery 自动支持 CRD / 聚合 API，而不是只为内置资源写死页面
-- 适配浅色/深色主题与移动端
+- 中英双语，浅色 / 深色 / 跟随系统主题
+- 适配桌面与移动端，窄屏表格自动转卡片
 
 ---
 
@@ -74,7 +75,9 @@ KubeInsight 的目标不是替代 Rancher 做集群交付，也不是替代 k9s 
 - 可选的共享令牌登录（HttpOnly Cookie）
 - `KUBEINSIGHT_READ_ONLY=1` 全站只读（同时禁用终端）
 - 自动刷新（关闭 / 5s / 10s / 30s）
-- 深色/浅色主题，移动端表格自动转卡片
+- 中英双语：默认跟随浏览器语言，可在顶栏或设置中切换并记忆
+- 浅色 / 深色 / 跟随系统主题；默认跟随系统并实时响应系统切换
+- 移动端表格自动转卡片
 
 ## 快速开始
 
@@ -195,6 +198,7 @@ web/src/
   pages/                 概览、资源列表、事件、API Explorer、设置
   components/            数据表、详情抽屉、YAML 编辑器、快捷变更、日志、终端、命令面板
   catalog.tsx            导航与各资源列定义
+  i18n.ts                中英词典、语言状态与轻量翻译函数
   AppContext.tsx         集群、命名空间、权限、刷新、主题
 deploy/kubernetes.yaml   集群内部署清单
 docs/design.md           工具对比与设计取舍
@@ -212,6 +216,22 @@ npm run smoke       # 需先启动服务；对真实集群做只读冒烟
 ```
 
 开发时前后端分离：Vite 在 5173 提供 HMR，并把 `/api` 与 `/api/exec` 代理到 `127.0.0.1:8090`。
+
+### 在 WSL2 中测试 k3s
+
+测试环境使用独立的 `Ubuntu-24.04` WSL 发行版与 k3s `v1.30.14+k3s1`：
+
+```bash
+wsl --install -d Ubuntu-24.04 --no-launch
+wsl -d Ubuntu-24.04 -u root
+# 在 WSL 内安装 k3s（示例）
+curl -fsSL https://get.k3s.io -o /tmp/install-k3s.sh
+INSTALL_K3S_VERSION='v1.30.14+k3s1' \
+INSTALL_K3S_EXEC='--disable traefik --write-kubeconfig-mode 644' \
+  sh /tmp/install-k3s.sh
+```
+
+WSL2 的 cgroup 与网络转发和裸 k3s 存在兼容性差异：kubelet 可能需要 `cgroup-driver=cgroupfs`，并使用 WSL 的 NAT IP（而不是 `127.0.0.1`）访问 API Server。完整 UI 功能验证建议使用 k3d / kind、Linux VM 或现有测试集群，避免把 WSL 的网络与 cgroup 限制误判为 KubeInsight 问题。
 
 ## 已知限制
 

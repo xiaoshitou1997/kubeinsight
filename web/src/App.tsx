@@ -13,8 +13,10 @@ import { SettingsPage } from './pages/SettingsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import type { Meta } from './types';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { tr, useLang } from './i18n';
 
 export function App() {
+  useLang();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [loading, setLoading] = useState(true);
   const [authRequired, setAuthRequired] = useState(false);
@@ -31,7 +33,7 @@ export function App() {
         return;
       }
       if (!response.ok) {
-        let message = `无法加载集群信息 (HTTP ${response.status})`;
+        let message = tr(`无法加载集群信息 (HTTP ${response.status})`, `Cannot load cluster information (HTTP ${response.status})`);
         try {
           const body = (await response.json()) as { error?: { message?: string } };
           if (body.error?.message) message = body.error.message;
@@ -69,17 +71,17 @@ export function App() {
   }
 
   if (loading && !meta) {
-    return <LoadingScreen label="正在连接 Kubernetes 集群…" />;
+    return <LoadingScreen label={tr('正在连接 Kubernetes 集群…')} />;
   }
 
   if (error && !meta) {
     return (
       <div className="fatal-screen">
         <div className="fatal-card">
-          <div className="fatal-title">无法启动控制台</div>
+          <div className="fatal-title">{tr('无法启动控制台')}</div>
           <p>{error}</p>
           <button type="button" className="btn btn-primary" onClick={() => void loadMeta()}>
-            重试
+            {tr('重试')}
           </button>
         </div>
       </div>

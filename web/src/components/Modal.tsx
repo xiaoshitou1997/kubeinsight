@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 
 export function Modal({
@@ -60,10 +61,14 @@ export function Modal({
       >
         <div className="modal-header">
           <div>
-            <div className="modal-title">{title}</div>
-            {subtitle && <div className="modal-subtitle">{subtitle}</div>}
+            <div className="modal-title">{typeof title === 'string' ? tr(title) : title}</div>
+            {subtitle && (
+              <div className="modal-subtitle">
+                {typeof subtitle === 'string' ? tr(subtitle) : subtitle}
+              </div>
+            )}
           </div>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="关闭">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={tr('关闭')}>
             <X size={16} />
           </button>
         </div>
@@ -80,8 +85,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = '确认',
-  cancelLabel = '取消',
-  danger = false,
+  cancelLabel = '取消',  danger = false,
   busy = false,
   onConfirm,
   onCancel,
@@ -107,7 +111,7 @@ export function ConfirmDialog({
       footer={
         <>
           <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>
-            {cancelLabel}
+            {tr(cancelLabel)}
           </button>
           <button
             type="button"
@@ -115,12 +119,16 @@ export function ConfirmDialog({
             onClick={onConfirm}
             disabled={busy}
           >
-            {busy ? '处理中…' : confirmLabel}
+            {busy ? tr('处理中…') : tr(confirmLabel)}
           </button>
         </>
       }
     >
-      {description && <p className="confirm-description">{description}</p>}
+      {description && (
+        <p className="confirm-description">
+          {typeof description === 'string' ? tr(description) : description}
+        </p>
+      )}
       {children}
     </Modal>
   );

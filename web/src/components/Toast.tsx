@@ -1,6 +1,7 @@
 import { CircleAlert, CircleCheck, Info, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../AppContext';
+import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 
 export function ToastViewport() {
@@ -24,7 +25,7 @@ export function ToastViewport() {
             <div className="toast-message">{toast.message}</div>
             {toast.detail && <div className="toast-detail">{toast.detail}</div>}
           </div>
-          <button type="button" className="toast-close" onClick={() => dismissToast(toast.id)} aria-label="关闭通知">
+          <button type="button" className="toast-close" onClick={() => dismissToast(toast.id)} aria-label={tr('关闭通知')}>
             <X size={13} />
           </button>
         </div>
