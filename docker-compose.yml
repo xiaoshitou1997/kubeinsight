@@ -1,0 +1,20 @@
+services:
+  kubeinsight:
+    build: .
+    image: kubeinsight:0.1.0
+    container_name: kubeinsight
+    ports:
+      - "8090:8090"
+    environment:
+      HOST: 0.0.0.0
+      KUBECONFIG: /home/node/.kube/config
+      KUBEINSIGHT_AUTH_TOKEN: ${KUBEINSIGHT_AUTH_TOKEN:?set KUBEINSIGHT_AUTH_TOKEN in .env}
+      KUBEINSIGHT_LOG_LEVEL: info
+    volumes:
+      - ${HOME}/.kube:/home/node/.kube:ro
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true

@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.github
+screenshots
+docs
+deploy
+tests
+scripts
+*.log
+.env
+.env.*
+!package-lock.json
+README.md
