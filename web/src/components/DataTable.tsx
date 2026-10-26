@@ -8,6 +8,7 @@ export interface TableColumn<T> {
   header: string;
   width?: string;
   align?: 'left' | 'right';
+  className?: string;
   render: (row: T) => ReactNode;
   sortValue?: (row: T) => string | number;
   defaultSort?: 'asc' | 'desc';
@@ -126,7 +127,10 @@ export function DataTable<T>({
                 <td
                   key={column.key}
                   data-label={column.header}
-                  className={column.align === 'right' ? 'align-right' : undefined}
+                  className={classNames(
+                    column.align === 'right' && 'align-right',
+                    column.className,
+                  )}
                 >
                   {column.render(row)}
                 </td>

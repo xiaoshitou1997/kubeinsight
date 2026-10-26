@@ -6,6 +6,7 @@ import { useApp } from '../AppContext';
 import { RESOURCES, resourceTemplates } from '../catalog';
 import { DataTable, type TableColumn } from '../components/DataTable';
 import { Meter } from '../components/Gauge';
+import { QuickActionsMenu } from '../components/QuickActions';
 import { ApplyYamlModal } from '../components/YamlEditor';
 import { EmptyState, ErrorState, PageHeader, SearchBox } from '../components/ui';
 import { useApiQuery, useDocumentTitle } from '../hooks';
@@ -98,6 +99,7 @@ export function ResourceListPage() {
   if (!def) return <NotFoundPage />;
 
   const canCreate = can({ group: def.group, plural: def.plural }, 'create');
+  const canQuickEdit = can({ group: def.group, plural: def.plural }, 'patch');
   const templateNamespace = def.namespaced ? namespace || 'default' : 'default';
   const templates = resourceTemplates(templateNamespace);
 
@@ -155,6 +157,32 @@ export function ResourceListPage() {
       },
     });
     columns.splice(columns.length - 1, 0, usageColumn('cpu'), usageColumn('memory'));
+  }
+
+  if (canQuickEdit) {
+    columns.push({
+      key: 'quick-actions',
+      header: '变更',
+      width: '52px',
+      align: 'right',
+      className: 'actions-cell',
+      render: (object) => (
+        <QuickActionsMenu
+          object={object}
+          target={{
+            kind: def.kind,
+            group: def.group,
+            version: def.version,
+            plural: def.plural,
+            namespace: object.metadata?.namespace,
+            name: object.metadata?.name,
+          }}
+          canPatch
+          onChanged={refreshNow}
+          variant="icon"
+        />
+      ),
+    });
   }
 
   const empty = (

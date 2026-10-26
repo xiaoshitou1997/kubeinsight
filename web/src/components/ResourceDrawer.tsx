@@ -26,6 +26,7 @@ import { Menu, type MenuItem } from './Menu';
 import { Modal, ConfirmDialog } from './Modal';
 import { ObjectEvents, RelatedPods } from './Related';
 import { ObjectOverview, resourceStatus } from './ObjectOverview';
+import { QuickActionsMenu } from './QuickActions';
 import { TerminalView } from './TerminalView';
 import { ApplyYamlModal, YamlView } from './YamlEditor';
 import { Badge, EmptyState, ErrorState, Spinner } from './ui';
@@ -367,6 +368,24 @@ export function ResourceDrawer({ selection, onClose }: { selection: ResourceRef;
               </div>
             </div>
             <div className="drawer-actions">
+              {object && (
+                <QuickActionsMenu
+                  object={object}
+                  target={{
+                    kind,
+                    group: selection.group,
+                    version: selection.version,
+                    plural: selection.plural,
+                    namespace: object.metadata?.namespace,
+                    name: selection.name,
+                  }}
+                  canPatch={canPatch}
+                  onChanged={() => {
+                    query.refetch();
+                    emitRefresh();
+                  }}
+                />
+              )}
               {kind === 'Pod' && (
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => setTab('logs')}>
                   <ScrollText size={14} /> 日志

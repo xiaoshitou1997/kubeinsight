@@ -95,6 +95,25 @@ Kubernetes 1.21+ 支持 `v4.channel.k8s.io` WebSocket 子协议。桥接层负�
 
 注意：exec 端点**不接受 `Accept` 头**，带 `application/json` 会被 API Server 以 406 拒绝；这是实现时踩到的一个真实坑（已写入代码注释）。
 
+### 3.7 快捷变更：把常见改动从 YAML 编辑器里拿出来
+
+完整 YAML 编辑适合一次性、复杂的变更，但日常操作往往只是：
+
+- 把 Deployment 的镜像从 `1.2.0` 换到 `1.2.1`；
+- 调整 requests/limits；
+- 加一个标签或注解；
+- 暂停一个 CronJob 或改 schedule。
+
+让用户在这些场景里打开整段 YAML 有三个问题：容易改错缩进、看不到当前值、无法做字段级校验。KubeInsight 因此提供**结构化快捷变更**：
+
+1. 前端按资源类型找到 PodSpec（Deployment/StatefulSet/DaemonSet 在 `spec.template.spec`，CronJob 在 `spec.jobTemplate.spec.template.spec`，Pod 在 `spec`）；
+2. 表单只提交本次变更涉及的内容（镜像只发送实际变化的容器；资源配额按容器的 requests/limits 快照提交，空值表示移除）；
+3. 后端先读取实时对象，校验容器存在、镜像非空、quantity 合法，再生成 **strategic merge patch** 或 **JSON merge patch**；
+4. 支持 `dryRun=All`，可在不落盘的情况下验证 patch；
+5. 所有操作仍经过 `requireWritable` 和 Kubernetes RBAC。
+
+支持范围刻意收敛在四类：镜像、资源配额、标签/注解、CronJob 调度。环境变量、Service 端口、Node taint 等后续可以按同一模式增加，而不必把界面做成低配 kubectl。
+
 ## 4. 请求链路
 
 ```mermaid

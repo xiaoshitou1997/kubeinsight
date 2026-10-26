@@ -14,6 +14,12 @@ import { metricsHandler } from './metrics.js';
 import { accessHandler } from './access.js';
 import { searchHandler } from './search.js';
 import { logsHandler } from './logs.js';
+import {
+  imageUpdateHandler,
+  metadataUpdateHandler,
+  resourcesUpdateHandler,
+  scheduleUpdateHandler,
+} from './quick.js';
 
 export function createRouter(): Router {
   const router = new Router();
@@ -30,6 +36,10 @@ export function createRouter(): Router {
   router.post('/api/scale', scaleHandler);
   router.post('/api/restart', restartHandler);
   router.post('/api/cordon', cordonHandler);
+  router.post('/api/actions/image', imageUpdateHandler);
+  router.post('/api/actions/resources', resourcesUpdateHandler);
+  router.post('/api/actions/metadata', metadataUpdateHandler);
+  router.post('/api/actions/schedule', scheduleUpdateHandler);
 
   router.get('/api/events', eventsHandler);
   router.get('/api/metrics', metricsHandler);

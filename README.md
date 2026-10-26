@@ -63,6 +63,7 @@ KubeInsight 的目标不是替代 Rancher 做集群交付，也不是替代 k9s 
 
 **操作**
 
+- **快捷变更（无需编辑整段 YAML）**：更新镜像、资源配额（requests/limits）、标签与注解、CronJob 调度；工作负载列表最右列的「变更」与详情抽屉都有独立入口
 - 创建 / 编辑 YAML，多文档、Server-Side Apply、冲突强制覆盖
 - 扩缩容、滚动重启、节点封锁/恢复调度、删除（可选级联策略）
 - 操作前依据 SelfSubjectRulesReview 做按钮级权限收敛；服务端仍以 Kubernetes RBAC 为最终边界
@@ -188,10 +189,11 @@ server/src/
     metrics.ts           metrics.k8s.io 聚合
     sanitize.ts          managedFields 清理、Secret 脱敏、YAML 生成
     urls.ts              GVR -> URL 与输入校验
-  api/                   meta / overview / resources / actions / events / logs / exec / search / access
+    workload.ts          快捷变更的 patch 构造与校验
+  api/                   meta / overview / resources / actions / quick / events / logs / exec / search / access
 web/src/
   pages/                 概览、资源列表、事件、API Explorer、设置
-  components/            数据表、详情抽屉、YAML 编辑器、日志、终端、命令面板
+  components/            数据表、详情抽屉、YAML 编辑器、快捷变更、日志、终端、命令面板
   catalog.tsx            导航与各资源列定义
   AppContext.tsx         集群、命名空间、权限、刷新、主题
 deploy/kubernetes.yaml   集群内部署清单

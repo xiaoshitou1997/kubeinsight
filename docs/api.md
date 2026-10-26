@@ -128,6 +128,66 @@ curl -b cookies.txt http://127.0.0.1:8090/api/meta
 
 查询参数：`cluster`、`name`（节点名），body `{"unschedulable": true}`。
 
+## 快捷变更（结构化 Patch）
+
+这些接口用于「不想编辑整段 YAML」的常见变更，服务端会先读取实时对象，校验容器名/数量后再发 Patch。全部支持 body 中的 `"dryRun": true`（转发为 Kubernetes `dryRun=All`）。
+
+### `POST /api/actions/image`
+
+查询参数：目标 GVR + `namespace` + `name`。
+
+```json
+{
+  "containers": [{ "name": "web", "image": "registry.example.com/web:1.2.0" }],
+  "initContainers": [],
+  "dryRun": false
+}
+```
+
+支持 Pod、Deployment、StatefulSet、DaemonSet、CronJob：
+
+- Pod 直接修改容器镜像（kubelet 重启对应容器）；
+- 控制器修改 `spec.template` 并触发滚动发布；
+- CronJob 修改 `jobTemplate`，只影响后续 Job；
+- 未变化的容器不会写入 patch。
+
+### `POST /api/actions/resources`
+
+```json
+{
+  "containers": [
+    {
+      "name": "web",
+      "requests": { "cpu": "100m", "memory": "128Mi" },
+      "limits": { "cpu": "500m", "memory": null }
+    }
+  ]
+}
+```
+
+支持 Deployment、StatefulSet、DaemonSet、CronJob。`null` 或空字符串表示移除该资源字段；非法 quantity 会在服务端拒绝。
+
+### `POST /api/actions/metadata`
+
+```json
+{
+  "labels": { "team": "platform", "old-label": null },
+  "annotations": { "example.com/owner": "platform" }
+}
+```
+
+任意资源类型。`null` 表示删除该键；使用 JSON Merge Patch，不会覆盖其他键。
+
+### `POST /api/actions/schedule`
+
+仅 CronJob：
+
+```json
+{ "schedule": "*/10 * * * *", "suspend": false, "timeZone": "Asia/Shanghai" }
+```
+
+`timeZone` 传空字符串会移除该字段。标准五段式表达式或 `@macro` 均可。
+
 ## 事件 / 指标 / 权限 / 搜索
 
 ### `GET /api/events`
