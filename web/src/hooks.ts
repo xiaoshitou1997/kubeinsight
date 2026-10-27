@@ -186,6 +186,33 @@ export function useResourceWatch<T>(
 
     let source: EventSource | null = null;
     let disposed = false;
+    let flushTimer: number | null = null;
+    const pending: ResourceWatchMessage<T>[] = [];
+
+    const flush = () => {
+      flushTimer = null;
+      if (disposed) return;
+      const batch = pending.splice(0);
+      for (const message of batch) messageRef.current(message);
+    };
+
+    const deliver = (message: ResourceWatchMessage<T>) => {
+      if (message.kind === 'event') {
+        pending.push(message);
+        if (flushTimer === null) flushTimer = window.setTimeout(flush, 500);
+        return;
+      }
+      if (flushTimer !== null) {
+        window.clearTimeout(flushTimer);
+        flushTimer = null;
+      }
+      if (pending.length > 0) {
+        const batch = pending.splice(0);
+        for (const item of batch) messageRef.current(item);
+      }
+      messageRef.current(message);
+    };
+
     setStatus('connecting');
 
     try {
@@ -197,7 +224,7 @@ export function useResourceWatch<T>(
         if (disposed) return;
         try {
           const message = JSON.parse((event as MessageEvent<string>).data) as ResourceWatchMessage<T>;
-          messageRef.current(message);
+          deliver(message);
           setStatus('live');
         } catch {
           /* ignore malformed frame */
@@ -212,6 +239,7 @@ export function useResourceWatch<T>(
 
     return () => {
       disposed = true;
+      if (flushTimer !== null) window.clearTimeout(flushTimer);
       source?.close();
     };
   }, [path, key, enabled]);

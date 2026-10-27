@@ -342,6 +342,8 @@ export function ResourceListPage() {
           hasMore={Boolean(continueToken)}
           loadingMore={loadingMore}
           onLoadMore={() => void loadMore()}
+          pageSize={50}
+          pageResetKey={`${key}:${namespace}:${search}:${cluster}`}
           onRowClick={(object) =>
             openResource({
               key: def.key,

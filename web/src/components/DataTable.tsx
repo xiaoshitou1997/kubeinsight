@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { tr } from '../i18n';
 import { classNames } from '../lib/format';
 import { Spinner } from './ui';
@@ -27,6 +27,8 @@ interface DataTableProps<T> {
   onLoadMore?: () => void;
   rowClassName?: (row: T) => string | undefined;
   className?: string;
+  pageSize?: number;
+  pageResetKey?: string;
 }
 
 export function DataTable<T>({
@@ -41,8 +43,15 @@ export function DataTable<T>({
   onLoadMore,
   rowClassName,
   className,
+  pageSize,
+  pageResetKey,
 }: DataTableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+  const [page, setPage] = useState(0);
+
+  useEffect(() => {
+    setPage(0);
+  }, [pageResetKey]);
 
   const sorted = useMemo(() => {
     if (!sort) return rows;
@@ -59,12 +68,22 @@ export function DataTable<T>({
 
   const toggleSort = (column: TableColumn<T>) => {
     if (!column.sortValue) return;
+    setPage(0);
     setSort((current) => {
       if (current?.key !== column.key) return { key: column.key, direction: 'asc' };
       if (current.direction === 'asc') return { key: column.key, direction: 'desc' };
       return null;
     });
   };
+
+  const pageCount = pageSize && pageSize > 0 ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1;
+  const currentPage = pageSize ? Math.min(page, pageCount - 1) : 0;
+  const visibleRows =
+    pageSize && pageSize > 0
+      ? sorted.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+      : sorted;
+  const pageStart = currentPage * (pageSize ?? 0) + 1;
+  const pageEnd = Math.min(sorted.length, (currentPage + 1) * (pageSize ?? sorted.length));
 
   return (
     <div className={classNames('table-wrap', className)}>
@@ -106,7 +125,7 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((row) => (
+          {visibleRows.map((row) => (
             <tr
               key={rowKey(row)}
               className={classNames(onRowClick && 'is-clickable', rowClassName?.(row))}
@@ -155,14 +174,46 @@ export function DataTable<T>({
 
       {!loading && rows.length === 0 && <div className="table-empty">{empty ?? tr('暂无资源')}</div>}
 
-      {hasMore && (
-        <div className="table-footer">
-          <button type="button" className="btn btn-ghost" onClick={onLoadMore} disabled={loadingMore}>
-            {loadingMore ? <Spinner /> : null}
-            {tr('加载更多')}
-          </button>
+      {hasMore || (pageSize && sorted.length > 0) ? (
+        <div className="table-footer table-pager">
+          {pageSize ? (
+            <span className="pager-info">
+              {pageStart}–{pageEnd} / {sorted.length}
+              {hasMore ? '+' : ''}
+            </span>
+          ) : (
+            <span />
+          )}
+          <div className="pager-actions">
+            {pageSize && pageCount > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setPage(Math.max(0, currentPage - 1))}
+                  disabled={currentPage === 0}
+                >
+                  {tr('上一页', 'Prev')}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setPage(Math.min(pageCount - 1, currentPage + 1))}
+                  disabled={currentPage >= pageCount - 1}
+                >
+                  {tr('下一页', 'Next')}
+                </button>
+              </>
+            )}
+            {hasMore && (!pageSize || currentPage === pageCount - 1) && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onLoadMore} disabled={loadingMore}>
+                {loadingMore ? <Spinner /> : null}
+                {tr('加载更多')}
+              </button>
+            )}
+          </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

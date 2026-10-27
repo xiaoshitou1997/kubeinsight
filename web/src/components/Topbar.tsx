@@ -42,7 +42,7 @@ export function Topbar() {
   } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
-  const now = useNow(1000);
+  const now = useNow(10_000);
 
   const pageKey = location.pathname.startsWith('/r/') ? location.pathname.slice(3) : '';
   const pageTitle =
