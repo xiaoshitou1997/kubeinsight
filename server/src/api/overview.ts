@@ -24,13 +24,19 @@ async function settle<T>(promise: Promise<T>): Promise<Settled<T>> {
   }
 }
 
+export function scopedListPath(path: string, namespace?: string): string {
+  return namespace
+    ? path.replace('{ns}', `namespaces/${encodeURIComponent(namespace)}`)
+    : path.replace('/{ns}', '');
+}
+
 async function list(
   client: KubeClient,
   path: string,
   namespace?: string,
   query: Record<string, string | number> = {},
 ): Promise<Obj[]> {
-  const fullPath = namespace ? path.replace('/{ns}', `/namespaces/${encodeURIComponent(namespace)}`) : path.replace('/{ns}', '');
+  const fullPath = scopedListPath(path, namespace);
   const result = await client.request<KubeList>(fullPath, {
     query,
     timeoutMs: 45_000,
@@ -62,12 +68,12 @@ export const overviewHandler: Handler = async (ctx) => {
     await Promise.all([
       settle(list(t.client, '/api/v1/nodes', undefined, { limit: 1000 })),
       settle(list(t.client, '/api/v1/namespaces', undefined, { limit: 1000 })),
-      settle(list(t.client, '/api/v1/pods/{ns}', namespace, { limit: 3000 })),
-      settle(list(t.client, '/apis/apps/v1/deployments/{ns}', namespace, { limit: 1000 })),
-      settle(list(t.client, '/apis/apps/v1/statefulsets/{ns}', namespace, { limit: 1000 })),
-      settle(list(t.client, '/apis/apps/v1/daemonsets/{ns}', namespace, { limit: 1000 })),
+      settle(list(t.client, '/api/v1/{ns}/pods', namespace, { limit: 3000 })),
+      settle(list(t.client, '/apis/apps/v1/{ns}/deployments', namespace, { limit: 1000 })),
+      settle(list(t.client, '/apis/apps/v1/{ns}/statefulsets', namespace, { limit: 1000 })),
+      settle(list(t.client, '/apis/apps/v1/{ns}/daemonsets', namespace, { limit: 1000 })),
       settle(
-        list(t.client, '/api/v1/events/{ns}', namespace, {
+        list(t.client, '/api/v1/{ns}/events', namespace, {
           limit: 300,
           fieldSelector: 'type=Warning',
         }),

@@ -1,4 +1,5 @@
 import {
+  Check,
   ChevronDown,
   FolderTree,
   LogOut,
@@ -83,23 +84,43 @@ export function Topbar() {
       <div className="topbar-right">
         {meta.readOnly && <span className="read-only-badge">{tr('只读模式')}</span>}
 
-        <label className="ns-picker" title={tr('切换命名空间')}>
-          <FolderTree size={14} />
-          <select
-            value={namespace}
-            onChange={(event) => setNamespace(event.target.value)}
-            aria-label={tr('命名空间')}
-          >
-            <option value="">{tr('全部命名空间')}</option>
-            {namespace && !namespaces.includes(namespace) && <option value={namespace}>{namespace}</option>}
-            {namespaces.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={13} className="ns-chevron" />
-        </label>
+        <Menu
+          ariaLabel={tr('切换命名空间')}
+          width={260}
+          button={
+            <button
+              type="button"
+              className="ns-picker"
+              title={tr('切换命名空间')}
+              aria-label={tr('命名空间')}
+            >
+              <FolderTree size={14} />
+              <span className="ns-picker-label">{namespace || tr('全部命名空间')}</span>
+              <ChevronDown size={13} className="ns-chevron" />
+            </button>
+          }
+          items={[
+            {
+              label: tr('全部命名空间'),
+              icon: namespace ? <FolderTree size={14} /> : <Check size={14} />,
+              onSelect: () => setNamespace(''),
+            },
+            ...(namespace && !namespaces.includes(namespace)
+              ? [
+                  {
+                    label: namespace,
+                    icon: <Check size={14} />,
+                    onSelect: () => setNamespace(namespace),
+                  },
+                ]
+              : []),
+            ...namespaces.map((item) => ({
+              label: item,
+              icon: namespace === item ? <Check size={14} /> : undefined,
+              onSelect: () => setNamespace(item),
+            })),
+          ]}
+        />
 
         <Menu
           ariaLabel={tr('自动刷新设置')}
