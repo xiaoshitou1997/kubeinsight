@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiError, api, onRefresh } from './api';
+import { ApiError, api, apiUrl, onRefresh } from './api';
+import type { KubeObject } from './types';
 
 interface QueryOptions {
   enabled?: boolean;
   pollMs?: number;
+  pausePolling?: boolean;
 }
 
 export interface QueryResult<T> {
@@ -11,7 +13,9 @@ export interface QueryResult<T> {
   error: ApiError | null;
   loading: boolean;
   refetch: () => void;
-  setData: (value: T | undefined) => void;
+  setData: (
+    value: T | undefined | ((current: T | undefined) => T | undefined),
+  ) => void;
 }
 
 export function useApiQuery<T>(
@@ -27,10 +31,13 @@ export function useApiQuery<T>(
   const [nonce, setNonce] = useState(0);
   const requestId = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  const pausePollingRef = useRef(false);
+  pausePollingRef.current = Boolean(options.pausePolling);
 
   const load = useCallback(
     async (background: boolean) => {
       if (!path || !enabled) return;
+      if (background && pausePollingRef.current) return;
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
@@ -138,4 +145,76 @@ export function useDocumentTitle(title: string): void {
       document.title = previous;
     };
   }, [title]);
+}
+
+export type WatchStatus = 'off' | 'connecting' | 'live' | 'reconnecting';
+
+export interface ResourceWatchEvent {
+  type: string;
+  object?: KubeObject;
+  resourceVersion?: string;
+}
+
+export type ResourceWatchMessage<T> =
+  | { kind: 'snapshot'; data: T }
+  | { kind: 'event'; event: ResourceWatchEvent }
+  | { kind: 'error'; message?: string }
+  | { kind: 'end' };
+
+/**
+ * Subscribe to the server-side Kubernetes watch bridge. EventSource handles
+ * reconnection; the caller only has to merge snapshots and incremental events.
+ */
+export function useResourceWatch<T>(
+  path: string | null,
+  params: Record<string, unknown> = {},
+  enabled = true,
+  onMessage: (message: ResourceWatchMessage<T>) => void,
+): { status: WatchStatus } {
+  const key = JSON.stringify(params);
+  const messageRef = useRef(onMessage);
+  messageRef.current = onMessage;
+  const [status, setStatus] = useState<WatchStatus>(
+    path && enabled ? 'connecting' : 'off',
+  );
+
+  useEffect(() => {
+    if (!path || !enabled) {
+      setStatus('off');
+      return;
+    }
+
+    let source: EventSource | null = null;
+    let disposed = false;
+    setStatus('connecting');
+
+    try {
+      source = new EventSource(apiUrl(path, JSON.parse(key) as Record<string, unknown>));
+      source.onopen = () => {
+        if (!disposed) setStatus('live');
+      };
+      source.addEventListener('update', (event) => {
+        if (disposed) return;
+        try {
+          const message = JSON.parse((event as MessageEvent<string>).data) as ResourceWatchMessage<T>;
+          messageRef.current(message);
+          setStatus('live');
+        } catch {
+          /* ignore malformed frame */
+        }
+      });
+      source.onerror = () => {
+        if (!disposed) setStatus('reconnecting');
+      };
+    } catch {
+      setStatus('reconnecting');
+    }
+
+    return () => {
+      disposed = true;
+      source?.close();
+    };
+  }, [path, key, enabled]);
+
+  return { status };
 }

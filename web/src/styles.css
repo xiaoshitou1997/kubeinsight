@@ -2427,6 +2427,35 @@ span.mono.muted {
   font-size: 10.5px;
 }
 
+.watch-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+}
+
+.watch-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--text-dim);
+  flex: none;
+}
+
+.watch-status.is-live {
+  color: var(--ok);
+}
+
+.watch-status.is-live .watch-dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px var(--ok-soft);
+}
+
+.watch-status.is-pending .watch-dot {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px var(--warn-soft);
+}
+
 .list-toolbar-hint {
   font-size: 10.5px;
 }

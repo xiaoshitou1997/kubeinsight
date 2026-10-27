@@ -14,6 +14,7 @@ import { metricsHandler } from './metrics.js';
 import { accessHandler } from './access.js';
 import { searchHandler } from './search.js';
 import { logsHandler } from './logs.js';
+import { watchHandler } from './watch.js';
 import {
   imageUpdateHandler,
   metadataUpdateHandler,
@@ -46,6 +47,7 @@ export function createRouter(): Router {
   router.get('/api/access', accessHandler);
   router.get('/api/search', searchHandler);
   router.get('/api/logs', logsHandler);
+  router.get('/api/watch', watchHandler);
 
   return router;
 }

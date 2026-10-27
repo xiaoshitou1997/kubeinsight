@@ -2,7 +2,7 @@
 
 KubeInsight 的所有接口都在同一个进程内，默认基址 `http://127.0.0.1:8090`。前端静态资源与 API 同源，因此浏览器端不需要 CORS。
 
-- 请求/响应均为 JSON，流式日志与 WebSocket 除外。
+- 请求/响应均为 JSON；流式日志、watch SSE 与 exec WebSocket 除外。
 - 错误格式：`{"error":{"message":"...","code":"...","status":403}}`。
 - 布尔参数使用 `1` / `0`，空字符串等同于未传。
 - 所有 `/api/*` 都接受 `cluster`（context id）；省略时使用默认 context。
@@ -76,6 +76,27 @@ curl -b cookies.txt http://127.0.0.1:8090/api/meta
 | `continue` | Kubernetes 分页 token |
 
 返回 `{items, continue, resourceVersion, remainingItemCount, resource}`。Secret 的 `data` 会被替换为 `_keys` 与 `_masked=true`。
+
+### `GET /api/watch`
+
+与 `/api/resources` 使用相同的 GVR、`namespace`、`labelSelector`、`fieldSelector` 与 `limit` 参数，但返回 `text/event-stream`：
+
+1. 先发送一条 `snapshot`，结构与 `/api/resources` 响应一致；
+2. 后续发送 `ADDED` / `MODIFIED` / `DELETED` / `BOOKMARK` 事件；
+3. 服务端每 25s 发送注释心跳；上游 watch 超时或断开后由浏览器 `EventSource` 自动重连。
+
+```bash
+curl -N "http://127.0.0.1:8090/api/watch?group=apps&version=v1&plural=deployments&namespace=default"
+```
+
+事件帧示例：
+
+```text
+event: update
+data: {"kind":"event","event":{"type":"MODIFIED","object":{"kind":"Deployment", "...":"..."}}}
+```
+
+Secret 事件与列表一致，默认不返回 `data` / `stringData` / `binaryData`。
 
 ### `GET /api/resource`
 

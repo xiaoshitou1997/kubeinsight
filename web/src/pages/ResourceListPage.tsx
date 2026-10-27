@@ -1,5 +1,5 @@
 import { Plus, RefreshCw, TriangleAlert } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../api';
 import { useApp } from '../AppContext';
@@ -9,7 +9,13 @@ import { Meter } from '../components/Gauge';
 import { QuickActionsMenu } from '../components/QuickActions';
 import { ApplyYamlModal } from '../components/YamlEditor';
 import { EmptyState, ErrorState, PageHeader, SearchBox } from '../components/ui';
-import { useApiQuery, useDocumentTitle } from '../hooks';
+import {
+  useApiQuery,
+  useDocumentTitle,
+  useResourceWatch,
+  type QueryResult,
+  type ResourceWatchMessage,
+} from '../hooks';
 import { tr } from '../i18n';
 import { formatPercent } from '../lib/format';
 import type { KubeObject, ListResponse, MetricsResponse } from '../types';
@@ -27,18 +33,64 @@ export function ResourceListPage() {
 
   useDocumentTitle(tr(def?.label ?? '资源'));
 
-  const query = useApiQuery<ListResponse>(
-    '/api/resources',
-    {
-      cluster,
-      group: def?.group,
-      version: def?.version,
-      plural: def?.plural,
-      namespace: def?.namespaced ? namespace || undefined : undefined,
-      limit: 250,
-    },
-    { enabled: Boolean(def) },
+  const watchParams = {
+    cluster,
+    group: def?.group,
+    version: def?.version,
+    plural: def?.plural,
+    namespace: def?.namespaced ? namespace || undefined : undefined,
+    limit: 250,
+  };
+  const queryRef = useRef<QueryResult<ListResponse> | null>(null);
+  const handleWatchMessage = (message: ResourceWatchMessage<ListResponse>) => {
+    const query = queryRef.current;
+    if (!query) return;
+    if (message.kind === 'snapshot') {
+      query.setData(message.data);
+      return;
+    }
+    if (message.kind !== 'event') return;
+
+    query.setData((current) => {
+      if (!current) return current;
+      const event = message.event;
+      if (event.type === 'BOOKMARK') {
+        return event.resourceVersion
+          ? { ...current, resourceVersion: event.resourceVersion }
+          : current;
+      }
+      if (event.type === 'ERROR') return current;
+      const object = event.object;
+      if (!object) return current;
+
+      const id = watchObjectId(object);
+      let items = current.items ?? [];
+      if (event.type === 'ADDED') {
+        if (!items.some((item) => watchObjectId(item) === id)) items = [...items, object];
+      } else if (event.type === 'MODIFIED') {
+        items = items.map((item) => (watchObjectId(item) === id ? object : item));
+      } else if (event.type === 'DELETED') {
+        items = items.filter((item) => watchObjectId(item) !== id);
+      }
+      return {
+        ...current,
+        items,
+        resourceVersion: object.metadata?.resourceVersion ?? current.resourceVersion,
+      };
+    });
+  };
+  const watch = useResourceWatch<ListResponse>(
+    '/api/watch',
+    watchParams,
+    Boolean(def),
+    handleWatchMessage,
   );
+
+  const query = useApiQuery<ListResponse>('/api/resources', watchParams, {
+    enabled: Boolean(def),
+    pausePolling: watch.status === 'live',
+  });
+  queryRef.current = query;
 
   const metrics = useApiQuery<MetricsResponse>(
     '/api/metrics',
@@ -46,11 +98,10 @@ export function ResourceListPage() {
     { enabled: key === 'nodes' },
   );
 
-  const resourceVersion = query.data?.resourceVersion;
   useEffect(() => {
     setExtraItems([]);
     setContinueToken(query.data?.continue ?? null);
-  }, [resourceVersion, query.data?.continue, key, namespace]);
+  }, [query.data?.continue, key, namespace, cluster]);
 
   useEffect(() => {
     setSearch('');
@@ -179,7 +230,10 @@ export function ResourceListPage() {
             name: object.metadata?.name,
           }}
           canPatch
-          onChanged={refreshNow}
+          onChanged={() => {
+            query.refetch();
+            refreshNow();
+          }}
           variant="icon"
         />
       ),
@@ -213,7 +267,14 @@ export function ResourceListPage() {
             <span className="refresh-meta">
               {rows.length} {tr('项')}{search ? ` · ${tr('匹配')} ${filtered.length}` : ''}
             </span>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={refreshNow}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                query.refetch();
+                refreshNow();
+              }}
+            >
               <RefreshCw size={14} className={query.loading ? 'spin' : ''} /> {tr('刷新')}
             </button>
             <button
@@ -242,7 +303,24 @@ export function ResourceListPage() {
                 : tr('全部命名空间')
               : tr('集群级资源')}
           </span>
-          {refreshInterval > 0 && (
+          {watch.status !== 'off' && (
+            <span
+              className={`watch-status ${watch.status === 'live' ? 'is-live' : 'is-pending'}`}
+              title={
+                watch.status === 'live'
+                  ? tr('已连接 Kubernetes watch，变更会实时推送。', 'Connected to Kubernetes watch; changes stream in real time.')
+                  : tr('正在建立 Kubernetes watch 连接。', 'Establishing the Kubernetes watch connection.')
+              }
+            >
+              <span className="watch-dot" />
+              {watch.status === 'live'
+                ? tr('实时', 'Live')
+                : watch.status === 'reconnecting'
+                  ? tr('重连中', 'Reconnecting')
+                  : tr('连接中', 'Connecting')}
+            </span>
+          )}
+          {refreshInterval > 0 && watch.status !== 'live' && (
             <span className="muted">
               · {tr('每 {{seconds}}s 自动刷新', 'every {{seconds}}s', { seconds: refreshInterval })}
             </span>
@@ -306,6 +384,10 @@ export function ResourceListPage() {
       />
     </div>
   );
+}
+
+function watchObjectId(object: KubeObject): string {
+  return String(object.metadata?.uid ?? `${object.metadata?.namespace}/${object.metadata?.name}`);
 }
 
 function parseCpuMillis(value: string | undefined): number {

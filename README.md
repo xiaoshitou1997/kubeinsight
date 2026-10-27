@@ -51,6 +51,7 @@ KubeInsight 的目标不是替代 Rancher 做集群交付，也不是替代 k9s 
 
 - 集群概览：节点健康、Pod 阶段分布、CPU/内存压力（metrics-server）、工作负载就绪度、异常 Pod、最近告警
 - 资源列表：Pods / Deployments / StatefulSets / DaemonSets / ReplicaSets / Jobs / CronJobs / Services / Ingresses / EndpointSlices / ConfigMaps / Secrets / HPA / ResourceQuota / LimitRange / PDB / PVC / PV / StorageClass / Nodes / Namespaces / CRD / RBAC 对象
+- 实时资源列表：通过 Kubernetes `watch` 推送首屏快照与增量事件，连接成功后自动暂停该列表轮询；断线自动重连
 - 事件中心：按类型、对象、关键字筛选，点击直达关联资源
 - 全局搜索：`⌘K` / `Ctrl K` 跨命名空间搜索资源
 - 节点视图：容量、可分配、实时使用率、污点、条件、该节点上的 Pod
@@ -193,7 +194,7 @@ server/src/
     sanitize.ts          managedFields 清理、Secret 脱敏、YAML 生成
     urls.ts              GVR -> URL 与输入校验
     workload.ts          快捷变更的 patch 构造与校验
-  api/                   meta / overview / resources / actions / quick / events / logs / exec / search / access
+  api/                   meta / overview / resources / watch / actions / quick / events / logs / exec / search / access
 web/src/
   pages/                 概览、资源列表、事件、API Explorer、设置
   components/            数据表、详情抽屉、YAML 编辑器、快捷变更、日志、终端、命令面板
@@ -236,7 +237,7 @@ WSL2 的 cgroup 与网络转发和裸 k3s 存在兼容性差异：kubelet 可能
 ## 已知限制
 
 - **无内置用户体系 / SSO**：只有可选共享令牌；多租户、按人审计不在当前范围。
-- **轮询而非 watch**：列表与概览按刷新间隔重新拉取，超大集群建议关闭自动刷新；日志与终端是真正的流式连接。
+- **轮询与 watch 并存**：资源列表通过 watch 增量更新；概览、事件与指标仍按刷新间隔轮询，超大集群建议关闭自动刷新；日志与终端是真正的流式连接。
 - **不管理集群生命周期**：不创建/升级集群，不内置 Helm、GitOps、流水线、告警。
 - **单实例**：无数据库，因此不支持多副本共享状态；Discovery 缓存按实例独立。
 - **exec 协议要求 Kubernetes ≥ 1.21**（WebSocket v4 channel）；极老集群或仅支持 SPDY 的代理可能不可用。

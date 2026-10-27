@@ -182,18 +182,24 @@ sequenceDiagram
 - **技术名词不翻译**：资源 Kind、API Group、字段名、状态值与 kubectl 术语保留英文，避免英文界面与命令/API 语义脱节。
 - **主题三态**：`system | light | dark`，默认 `system`；通过 `prefers-color-scheme` 实时响应系统切换，用户可固定浅色或深色。`web/public/theme.js` 在 React 挂载前设置 `data-theme`，避免首屏闪烁。
 
-## 9. 后续路线
+## 9. 实时资源列表
+
+- 服务端 `/api/watch` 把 Kubernetes 的 chunked watch 流转换为 SSE：先发首屏快照，再发 `ADDED` / `MODIFIED` / `DELETED` 事件；每 25s 发送心跳。
+- 前端 `useResourceWatch` 使用原生 `EventSource`，断线自动重连；列表连接成功后暂停全局轮询，仅保留手动刷新作为兜底。
+- 事件对象仍在服务端脱敏，Secret 的 `data` 不会进入浏览器；SSE 与普通 JSON API 共用同一套认证与 kubeconfig 身份。
+- 只有资源列表做增量；概览、事件与指标仍按间隔轮询，避免把大范围聚合逻辑塞进 watch。
+
+## 10. 后续路线
 
 优先级从高到低：
 
-1. **watch/SSE**：在资源列表上做增量更新，降低轮询开销。
-2. **OIDC / impersonation**：按用户身份访问 API Server，实现真正的按人审计。
-3. **Helm release 浏览**：只读查看 release 与 values，不做部署编排。
-4. **Prometheus 查询**：可选的指标面板，避免把时序库塞进主进程。
-5. **审计与操作记录**：记录谁在 UI 上发起了什么写操作（需要用户体系）。
-6. **e2e 测试**：用 kind 起临时集群，覆盖 apply / logs / exec。
+1. **OIDC / impersonation**：按用户身份访问 API Server，实现真正的按人审计。
+2. **Helm release 浏览**：只读查看 release 与 values，不做部署编排。
+3. **Prometheus 查询**：可选的指标面板，避免把时序库塞进主进程。
+4. **审计与操作记录**：记录谁在 UI 上发起了什么写操作（需要用户体系）。
+5. **e2e 测试**：用 kind 起临时集群，覆盖 apply / logs / exec。
 
-## 10. 参考
+## 11. 参考
 
 - Kubernetes Dashboard 归档仓库：<https://github.com/kubernetes-retired/dashboard>
 - Headlamp：<https://github.com/headlamp-k8s/headlamp>
