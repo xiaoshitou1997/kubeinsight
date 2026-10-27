@@ -65,7 +65,8 @@ KubeInsight 的目标不是替代 Rancher 做集群交付，也不是替代 k9s 
 
 **操作**
 
-- **快捷变更（无需编辑整段 YAML）**：更新镜像、资源配额（requests/limits）、标签与注解、CronJob 调度；工作负载列表最右列的「变更」与详情抽屉都有独立入口
+- **快捷变更（无需编辑整段 YAML）**：更新镜像、资源配额（requests/limits）、标签与注解、CronJob 调度、伸缩；工作负载列表最右列的「变更」与详情抽屉都有独立入口
+- **列表内联编辑**：Deployments / StatefulSets / ReplicaSets 的 READY 列旁铅笔可直接调整副本数，IMAGES 列旁铅笔可直接更新镜像
 - 创建 / 编辑 YAML，多文档、Server-Side Apply、冲突强制覆盖
 - 扩缩容、滚动重启、节点封锁/恢复调度、删除（可选级联策略）
 - 操作前依据 SelfSubjectRulesReview 做按钮级权限收敛；服务端仍以 Kubernetes RBAC 为最终边界

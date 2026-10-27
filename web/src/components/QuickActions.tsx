@@ -2,6 +2,7 @@ import {
   Box,
   Clock,
   Cpu,
+  Pencil,
   Plus,
   RotateCcw,
   Settings,
@@ -28,10 +29,11 @@ export interface QuickTarget {
   name: string;
 }
 
-type ModalKind = 'image' | 'resources' | 'metadata' | 'schedule';
+type ModalKind = 'image' | 'scale' | 'resources' | 'metadata' | 'schedule';
 
 const IMAGE_KINDS = new Set(['Pod', 'Deployment', 'StatefulSet', 'DaemonSet', 'CronJob']);
 const RESOURCE_KINDS = new Set(['Deployment', 'StatefulSet', 'DaemonSet', 'CronJob']);
+const SCALE_KINDS = new Set(['Deployment', 'StatefulSet', 'ReplicaSet']);
 
 function workloadSpec(object: KubeObject, kind: string): KubeObject | undefined {
   switch (kind) {
@@ -65,6 +67,10 @@ export function supportsImageUpdate(kind: string): boolean {
 
 export function supportsResourceUpdate(kind: string): boolean {
   return RESOURCE_KINDS.has(kind);
+}
+
+export function supportsScale(kind: string): boolean {
+  return SCALE_KINDS.has(kind);
 }
 
 interface ContainerEntry {
@@ -126,6 +132,13 @@ export function QuickActionsMenu({
       onSelect: () => setModal('resources'),
     });
   }
+  if (supportsScale(kind)) {
+    items.push({
+      label: tr('伸缩'),
+      icon: <SlidersHorizontal size={14} />,
+      onSelect: () => setModal('scale'),
+    });
+  }
   items.push({
     label: tr('标签与注解'),
     icon: <Settings size={14} />,
@@ -167,6 +180,14 @@ export function QuickActionsMenu({
 
       {modal === 'image' && (
         <ImageUpdateModal
+          target={target}
+          object={object}
+          onClose={() => setModal(null)}
+          onApplied={() => applied()}
+        />
+      )}
+      {modal === 'scale' && (
+        <ScaleModal
           target={target}
           object={object}
           onClose={() => setModal(null)}
@@ -251,6 +272,126 @@ function ActionResult({
       {error && <div className="form-error">{error}</div>}
       {children}
     </>
+  );
+}
+
+export function InlineAction({
+  action,
+  object,
+  target,
+  children,
+}: {
+  action: 'image' | 'scale';
+  object: KubeObject;
+  target: QuickTarget;
+  children: ReactNode;
+}) {
+  const { can, refreshNow } = useApp();
+  const [open, setOpen] = useState(false);
+  if (!can({ group: target.group, plural: target.plural }, 'patch')) return <>{children}</>;
+
+  const label = action === 'image' ? tr('更新镜像') : tr('调整副本数');
+  const applied = () => {
+    setOpen(false);
+    refreshNow();
+  };
+
+  return (
+    <span className="inline-edit">
+      {children}
+      <button
+        type="button"
+        className="inline-edit-btn"
+        title={label}
+        aria-label={label}
+        onClick={(event) => {
+          event.stopPropagation();
+          setOpen(true);
+        }}
+      >
+        <Pencil size={11} />
+      </button>
+      {open && action === 'image' && (
+        <ImageUpdateModal target={target} object={object} onClose={() => setOpen(false)} onApplied={applied} />
+      )}
+      {open && action === 'scale' && (
+        <ScaleModal target={target} object={object} onClose={() => setOpen(false)} onApplied={applied} />
+      )}
+    </span>
+  );
+}
+
+export function ScaleModal({
+  target,
+  object,
+  onClose,
+  onApplied,
+}: {
+  target: QuickTarget;
+  object: KubeObject;
+  onClose: () => void;
+  onApplied: () => void;
+}) {
+  const { notify } = useApp();
+  const params = useActionParams(target);
+  const current = Number(object.spec?.replicas ?? object.status?.replicas ?? 0);
+  const [value, setValue] = useState(String(current));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const parsed = Number(value);
+  const invalid = !Number.isInteger(parsed) || parsed < 0 || parsed > 100_000;
+
+  const submit = async () => {
+    if (invalid || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await post('/api/scale', { replicas: parsed }, params);
+      notify(
+        tr(
+          `已将 ${target.name} 伸缩到 ${parsed} 个副本`,
+          `Scaled ${target.name} to ${parsed} replica(s)`,
+        ),
+        'ok',
+      );
+      onApplied();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={tr('调整副本数')}
+      subtitle={`${target.kind} / ${target.namespace ? `${target.namespace}/` : ''}${target.name}`}
+      size="sm"
+      footer={<ModalFooter onClose={onClose} onSubmit={() => void submit()} busy={busy} disabled={invalid} />}
+    >
+      <ActionResult error={error}>
+        <label className="form-label" htmlFor="inline-scale-replicas">
+          {tr('期望副本数')}
+        </label>
+        <input
+          id="inline-scale-replicas"
+          className="input"
+          type="number"
+          min={0}
+          max={100000}
+          step={1}
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          autoFocus
+        />
+        <p className="form-hint">
+          {tr('当前副本：')}
+          {current}
+        </p>
+      </ActionResult>
+    </Modal>
   );
 }
 

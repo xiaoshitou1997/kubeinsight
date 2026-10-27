@@ -74,6 +74,19 @@ export function namespaceOf(ctx: RequestContext, resource: ApiResource): string 
   return namespace;
 }
 
+/** Kubernetes list items omit kind/apiVersion; add them for generic UI rendering. */
+export function ensureTypeMeta<T extends Record<string, any>>(
+  item: T,
+  resource: { kind: string; group: string; version: string },
+): T {
+  const object = item as Record<string, any>;
+  if (!object.kind) object.kind = resource.kind;
+  if (!object.apiVersion) {
+    object.apiVersion = resource.group ? `${resource.group}/${resource.version}` : resource.version;
+  }
+  return item;
+}
+
 export function effectiveNamespace(ctx: RequestContext, resource: ApiResource): string {
   if (!resource.namespaced) return '';
   const namespace = queryString(ctx, 'namespace');

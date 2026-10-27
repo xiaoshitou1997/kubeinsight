@@ -2334,6 +2334,39 @@ span.mono.muted {
   color: var(--text-dim);
 }
 
+.inline-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.inline-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  flex: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  opacity: 0.65;
+}
+
+.inline-edit:hover .inline-edit-btn,
+.inline-edit-btn:focus-visible {
+  opacity: 1;
+  border-color: var(--line);
+}
+
+.inline-edit-btn:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .resources-cell {
   font-size: 10px;
   color: var(--text-dim);

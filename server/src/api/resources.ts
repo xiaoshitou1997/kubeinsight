@@ -3,7 +3,7 @@ import { HttpError, KubeError } from '../errors.js';
 import { queryBool, queryInt, queryString, requireQuery, type Handler } from '../http/context.js';
 import { listQuery, resourcePath, type Gvr } from '../k8s/urls.js';
 import { applyBody, editableYaml, sanitizeObject } from '../k8s/sanitize.js';
-import { namespaceOf, requireWritable, resolveResource, target } from './shared.js';
+import { namespaceOf, ensureTypeMeta, requireWritable, resolveResource, target } from './shared.js';
 
 interface KubeList {
   apiVersion?: string;
@@ -31,6 +31,7 @@ export const listResourcesHandler: Handler = async (ctx) => {
 
   const items = (list.items ?? []).map((item) => {
     sanitizeObject(item);
+    ensureTypeMeta(item, resolved.resource);
     if (item.kind === 'Secret') {
       item._masked = true;
       item._keys = Object.keys(item.data ?? item.stringData ?? {}).sort();
@@ -68,6 +69,7 @@ export const getResourceHandler: Handler = async (ctx) => {
   const object = await resolved.client.request<Record<string, any>>(
     resourcePath(resolved.gvr, { namespace, name }),
   );
+  ensureTypeMeta(object, resolved.resource);
 
   const masked = resolved.resource.kind === 'Secret' && !reveal;
   sanitizeObject(object, { revealSecrets: !masked });

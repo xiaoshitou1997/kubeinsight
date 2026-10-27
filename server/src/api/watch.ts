@@ -1,7 +1,7 @@
 import { queryInt, queryString, type Handler } from '../http/context.js';
 import { listQuery, resourcePath } from '../k8s/urls.js';
 import { sanitizeObject } from '../k8s/sanitize.js';
-import { namespaceOf, resolveResource } from './shared.js';
+import { ensureTypeMeta, namespaceOf, resolveResource } from './shared.js';
 
 interface KubeList {
   apiVersion?: string;
@@ -56,8 +56,12 @@ export function createWatchLineParser(onEvent: (event: WatchEvent) => void): (ch
   };
 }
 
-function sanitizeItem(item: Record<string, any>): Record<string, any> {
+function sanitizeItem(
+  item: Record<string, any>,
+  resource: { kind: string; group: string; version: string },
+): Record<string, any> {
   sanitizeObject(item);
+  ensureTypeMeta(item, resource);
   return item;
 }
 
@@ -75,7 +79,7 @@ export const watchHandler: Handler = async (ctx) => {
     query: selectors,
     timeoutMs: 45_000,
   });
-  const items = (list.items ?? []).map(sanitizeItem);
+  const items = (list.items ?? []).map((item) => sanitizeItem(item, resolved.resource));
 
   ctx.res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -147,7 +151,10 @@ export const watchHandler: Handler = async (ctx) => {
 
   response.setEncoding('utf8');
   response.on('data', createWatchLineParser((event) => {
-    if (event.object) sanitizeObject(event.object);
+    if (event.object) {
+      sanitizeObject(event.object);
+      if (event.type !== 'BOOKMARK') ensureTypeMeta(event.object, resolved.resource);
+    }
     send('update', { kind: 'event', event });
   }));
   response.on('end', () => {

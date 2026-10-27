@@ -28,6 +28,12 @@ import type { ReactNode } from 'react';
 import type { KubeObject } from './types';
 import { Badge, Ratio } from './components/ui';
 import {
+  InlineAction,
+  supportsImageUpdate,
+  supportsScale,
+  type QuickTarget,
+} from './components/QuickActions';
+import {
   ageFromTimestamp,
   formatAge,
   formatAgeFromTimestamp,
@@ -84,11 +90,43 @@ const ageColumn: ColumnDef = {
   sortValue: (object) => ageFromTimestamp(object.metadata?.creationTimestamp) ?? 0,
 };
 
+const quickTarget = (object: KubeObject): QuickTarget | undefined => {
+  const kind = String(object.kind ?? '');
+  const plurals: Record<string, string> = {
+    Deployment: 'deployments',
+    StatefulSet: 'statefulsets',
+    ReplicaSet: 'replicasets',
+    DaemonSet: 'daemonsets',
+    CronJob: 'cronjobs',
+    Pod: 'pods',
+  };
+  const plural = plurals[kind];
+  if (!plural) return undefined;
+  const apiVersion = String(object.apiVersion ?? 'v1');
+  const slash = apiVersion.indexOf('/');
+  return {
+    kind,
+    group: slash >= 0 ? apiVersion.slice(0, slash) : '',
+    version: slash >= 0 ? apiVersion.slice(slash + 1) : apiVersion,
+    plural,
+    namespace: object.metadata?.namespace,
+    name: object.metadata?.name,
+  };
+};
+
 const readyColumn = (ready: (object: KubeObject) => number, total: (object: KubeObject) => number): ColumnDef => ({
   key: 'ready',
   header: 'READY',
-  width: '74px',
-  render: (object) => <Ratio ready={ready(object)} total={total(object)} />,
+  width: '96px',
+  render: (object) => {
+    const content = <Ratio ready={ready(object)} total={total(object)} />;
+    const target = quickTarget(object);
+    return target && supportsScale(String(object.kind ?? '')) ? (
+      <InlineAction action="scale" object={object} target={target}>
+        {content}
+      </InlineAction>
+    ) : content;
+  },
   sortValue: (object) => {
     const desired = total(object);
     return desired === 0 ? 1 : ready(object) / desired;
@@ -101,12 +139,18 @@ const imagesColumn: ColumnDef = {
   render: (object) => {
     const images = imagesOf(object);
     if (images.length === 0) return <span className="muted">—</span>;
-    return (
+    const content = (
       <span className="image-cell" title={images.join('\n')}>
         {truncate(shortImage(images[0]), 34)}
         {images.length > 1 && <span className="muted"> +{images.length - 1}</span>}
       </span>
     );
+    const target = quickTarget(object);
+    return target && supportsImageUpdate(String(object.kind ?? '')) ? (
+      <InlineAction action="image" object={object} target={target}>
+        {content}
+      </InlineAction>
+    ) : content;
   },
   sortValue: (object) => imagesOf(object).join(','),
 };
