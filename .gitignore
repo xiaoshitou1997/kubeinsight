@@ -12,3 +12,5 @@ screenshots/*.png
 !screenshots/.gitkeep
 test-results/
 coverage/
+.claude/
+.playwright-mcp/
