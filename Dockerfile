@@ -15,7 +15,7 @@ LABEL org.opencontainers.image.title="KubeInsight" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 ENV NODE_ENV=production \
-    HOST=0.0.0.0 \
+    KUBEINSIGHT_HOST=0.0.0.0 \
     PORT=8090 \
     KUBEINSIGHT_WEB_DIR=/app/dist/public \
     TMPDIR=/tmp
